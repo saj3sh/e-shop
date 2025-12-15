@@ -23,6 +23,11 @@ public class Address
         Type = type;
         CustomerId = customerId;
     }
+
+    public void UpdateType(AddressType type)
+    {
+        Type = type;
+    }
 }
 
 public enum AddressType
