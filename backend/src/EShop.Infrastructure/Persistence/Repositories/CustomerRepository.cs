@@ -22,6 +22,13 @@ public class CustomerRepository : ICustomerRepository
         return await _context.Addresses.FindAsync([addressId], ct);
     }
 
+    public async Task<List<Address>> GetCustomerAddressesAsync(Guid customerId, CancellationToken ct = default)
+    {
+        return await _context.Addresses
+            .Where(a => a.CustomerId == customerId)
+            .ToListAsync(ct);
+    }
+
     public void Add(Customer customer)
     {
         _context.Customers.Add(customer);
