@@ -20,6 +20,13 @@ public class ProductRepository : IProductRepository
         return await _context.Products.FindAsync([id], ct);
     }
 
+    public async Task<List<Product>> GetByIdsAsync(List<ProductId> ids, CancellationToken ct = default)
+    {
+        return await _context.Products
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync(ct);
+    }
+
     public async Task<(List<Product> Items, int TotalCount)> SearchAsync(
         string? searchTerm,
         int page,
