@@ -5,6 +5,7 @@ import { CardIcon } from "../components/CardIcon";
 
 interface OrderItem {
   productId: string;
+  productName: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -83,7 +84,7 @@ export const OrderDetailsPage = () => {
             {order.items.map((item, index) => (
               <div key={index} className="flex justify-between">
                 <span>
-                  Item {index + 1} × {item.quantity}
+                  {item.productName} × {item.quantity}
                 </span>
                 <span>${item.totalPrice.toFixed(2)}</span>
               </div>
