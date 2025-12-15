@@ -16,7 +16,7 @@ public class OrdersController : ControllerBase
         [FromServices] CheckoutOrderCommandHandler handler,
         CancellationToken ct)
     {
-        var customerIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var customerIdClaim = User.FindFirst("CustomerId")?.Value;
         if (customerIdClaim == null)
             return Unauthorized();
 
@@ -25,7 +25,9 @@ public class OrdersController : ControllerBase
             request.Items.Select(i => new OrderItemDto(i.ProductId, i.Quantity)).ToList(),
             request.ShippingAddressId,
             request.BillingAddressId,
-            request.ShippingCountry
+            request.ShippingCountry,
+            request.CardNumber,
+            request.CardType
         );
 
         var result = await handler.HandleAsync(command, ct);
@@ -53,13 +55,30 @@ public class OrdersController : ControllerBase
 
         return Ok(result.Value);
     }
+
+    [HttpGet("{orderId}")]
+    public async Task<IActionResult> GetOrderById(
+        Guid orderId,
+        [FromServices] GetOrderByIdQueryHandler handler,
+        CancellationToken ct)
+    {
+        var query = new GetOrderByIdQuery(orderId);
+        var result = await handler.HandleAsync(query, ct);
+
+        if (!result.IsSuccess)
+            return NotFound(new { error = result.Error });
+
+        return Ok(result.Value);
+    }
 }
 
 public record CheckoutRequest(
     List<CheckoutItemRequest> Items,
     Guid ShippingAddressId,
     Guid BillingAddressId,
-    string ShippingCountry
+    string ShippingCountry,
+    string? CardNumber,
+    string? CardType
 );
 
 public record CheckoutItemRequest(Guid ProductId, int Quantity);

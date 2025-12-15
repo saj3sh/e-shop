@@ -43,7 +43,10 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserAccountRepository, UserAccountRepository>();
 
 // caching
-builder.Services.AddSingleton<ICache, InMemoryCache>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICache, MemoryCacheAdapter>();
+builder.Services.AddScoped<ICacheInvalidator, CacheInvalidator>();
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("Cache"));
 
 // services
 builder.Services.AddScoped<DataImportService>();
