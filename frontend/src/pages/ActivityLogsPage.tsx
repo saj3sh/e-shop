@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import { useState } from "react";
+import { Card, Badge, Select } from "../components/ui";
+import { LoadingState } from "../components/LoadingState";
 
 interface ActivityLog {
   id: string;
@@ -33,15 +35,16 @@ export const ActivityLogsPage = () => {
     refetchOnMount: "always",
   });
 
-  const getActionColor = (action: string) => {
+  const getActionVariant = (
+    action: string
+  ): "success" | "info" | "danger" | "gray" => {
     if (action.includes("Created") || action.includes("Placed"))
-      return "text-green-700 bg-green-50";
+      return "success";
     if (action.includes("Updated") || action.includes("Processing"))
-      return "text-blue-700 bg-blue-50";
+      return "info";
     if (action.includes("Deleted") || action.includes("Cancelled"))
-      return "text-red-700 bg-red-50";
-    if (action.includes("Completed")) return "text-gray-700 bg-gray-50";
-    return "text-gray-700 bg-gray-100";
+      return "danger";
+    return "gray";
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -60,65 +63,51 @@ export const ActivityLogsPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">activity logs</h1>
+      <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        Activity Logs
+      </h1>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <Card className="mb-6" padding="lg">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              filter by entity type
-            </label>
-            <select
+            <Select
+              label="Filter by entity type"
               value={entityTypeFilter}
               onChange={(e) => setEntityTypeFilter(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">all types</option>
+              <option value="">All types</option>
               {uniqueEntityTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              limit
-            </label>
-            <select
+            <Select
+              label="Limit"
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={50}>50 entries</option>
               <option value={100}>100 entries</option>
               <option value={250}>250 entries</option>
               <option value={500}>500 entries</option>
-            </select>
+            </Select>
           </div>
-          {entityTypeFilter && (
-            <div className="flex items-end">
-              <button
-                onClick={() => setEntityTypeFilter("")}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 underline"
-              >
-                clear filter
-              </button>
-            </div>
-          )}
         </div>
-      </div>
+      </Card>
 
       {/* Activity Logs Table */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">
-          recent activity
+      <Card padding="lg">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">
+          Recent Activity
           {entityTypeFilter && ` (${entityTypeFilter})`}
         </h2>
 
         {isLoading ? (
-          <p>loading activity logs...</p>
+          <LoadingState message="Loading activity logs..." />
         ) : logs && logs.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -153,13 +142,9 @@ export const ActivityLogsPage = () => {
                       </div>
                     </td>
                     <td className="py-3 px-2">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getActionColor(
-                          log.action
-                        )}`}
-                      >
+                      <Badge variant={getActionVariant(log.action)}>
                         {log.action}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="py-3 px-2">
                       {log.userEmail ? (
@@ -193,10 +178,10 @@ export const ActivityLogsPage = () => {
 
         {logs && logs.length > 0 && (
           <div className="mt-4 text-sm text-gray-600">
-            showing {logs.length} activities
+            Showing {logs.length} activities
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

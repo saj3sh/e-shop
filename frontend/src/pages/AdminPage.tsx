@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import { useState } from "react";
 import { OrderActionsMenu } from "../components/OrderActionsMenu";
+import { Card, Badge, Button, Input, Select } from "../components/ui";
+import { LoadingState } from "../components/LoadingState";
 
 interface Order {
   id: string;
@@ -65,162 +67,181 @@ export const AdminPage = () => {
     setCurrentPage(1);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (
+    status: string
+  ): "success" | "warning" | "danger" | "info" | "purple" | "gray" => {
     switch (status.toLowerCase()) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "warning";
       case "processing":
-        return "bg-blue-100 text-blue-800";
+        return "info";
       case "shipped":
-        return "bg-purple-100 text-purple-800";
+        return "purple";
       case "delivered":
-        return "bg-green-100 text-green-800";
+        return "success";
       case "completed":
-        return "bg-gray-100 text-gray-800";
+        return "gray";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "danger";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "gray";
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">admin dashboard</h1>
+      <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        Admin Dashboard
+      </h1>
 
       {/* Statistics Cards */}
       {data?.statistics && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
-            <div className="text-sm text-gray-600 mb-1">total orders</div>
+          <Card hover className="text-center cursor-default" padding="sm">
+            <div className="text-sm text-gray-600 mb-1">Total Orders</div>
             <div className="text-2xl font-bold text-gray-900">
               {data.statistics.totalOrders}
             </div>
-          </div>
-          <div
-            className="bg-yellow-50 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleFilterChange("Pending")}
-          >
-            <div className="text-sm text-yellow-700 mb-1">pending</div>
-            <div className="text-2xl font-bold text-yellow-900">
-              {data.statistics.pendingOrders}
-            </div>
-          </div>
-          <div
-            className="bg-blue-50 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleFilterChange("Processing")}
-          >
-            <div className="text-sm text-blue-700 mb-1">processing</div>
-            <div className="text-2xl font-bold text-blue-900">
-              {data.statistics.processingOrders}
-            </div>
-          </div>
-          <div
-            className="bg-purple-50 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleFilterChange("Shipped")}
-          >
-            <div className="text-sm text-purple-700 mb-1">shipped</div>
-            <div className="text-2xl font-bold text-purple-900">
-              {data.statistics.shippedOrders}
-            </div>
-          </div>
-          <div
-            className="bg-green-50 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleFilterChange("Delivered")}
-          >
-            <div className="text-sm text-green-700 mb-1">delivered</div>
-            <div className="text-2xl font-bold text-green-900">
-              {data.statistics.deliveredOrders}
-            </div>
-          </div>
-          <div
-            className="bg-gray-50 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleFilterChange("Completed")}
-          >
-            <div className="text-sm text-gray-700 mb-1">completed</div>
-            <div className="text-2xl font-bold text-gray-900">
-              {data.statistics.completedOrders}
-            </div>
-          </div>
-          <div
-            className="bg-red-50 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleFilterChange("Cancelled")}
-          >
-            <div className="text-sm text-red-700 mb-1">cancelled</div>
-            <div className="text-2xl font-bold text-red-900">
-              {data.statistics.cancelledOrders}
-            </div>
-          </div>
+          </Card>
+          {[
+            {
+              label: "Pending",
+              value: data.statistics.pendingOrders,
+              color: "bg-yellow-50",
+              textColor: "text-yellow-900",
+              subText: "text-yellow-700",
+              status: "Pending",
+            },
+            {
+              label: "Processing",
+              value: data.statistics.processingOrders,
+              color: "bg-blue-50",
+              textColor: "text-blue-900",
+              subText: "text-blue-700",
+              status: "Processing",
+            },
+            {
+              label: "Shipped",
+              value: data.statistics.shippedOrders,
+              color: "bg-purple-50",
+              textColor: "text-purple-900",
+              subText: "text-purple-700",
+              status: "Shipped",
+            },
+            {
+              label: "Delivered",
+              value: data.statistics.deliveredOrders,
+              color: "bg-green-50",
+              textColor: "text-green-900",
+              subText: "text-green-700",
+              status: "Delivered",
+            },
+            {
+              label: "Completed",
+              value: data.statistics.completedOrders,
+              color: "bg-gray-50",
+              textColor: "text-gray-900",
+              subText: "text-gray-700",
+              status: "Completed",
+            },
+            {
+              label: "Cancelled",
+              value: data.statistics.cancelledOrders,
+              color: "bg-red-50",
+              textColor: "text-red-900",
+              subText: "text-red-700",
+              status: "Cancelled",
+            },
+          ].map((stat) => (
+            <Card
+              key={stat.label}
+              hover
+              className={`${stat.color} cursor-pointer text-center`}
+              onClick={() => handleFilterChange(stat.status)}
+              padding="sm"
+            >
+              <div className={`text-sm ${stat.subText} mb-1`}>{stat.label}</div>
+              <div className={`text-2xl font-bold ${stat.textColor}`}>
+                {stat.value}
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <Card padding="lg">
         {/* Filters and Search */}
         <div className="mb-6 flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              filter by status
-            </label>
-            <select
+            <Select
+              label="Filter by status"
               value={statusFilter}
               onChange={(e) => handleFilterChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">all statuses</option>
-              <option value="Pending">pending</option>
-              <option value="Processing">processing</option>
-              <option value="Shipped">shipped</option>
-              <option value="Delivered">delivered</option>
-              <option value="Completed">completed</option>
-              <option value="Cancelled">cancelled</option>
-            </select>
+              <option value="">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </Select>
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              search by tracking number
-            </label>
-            <input
+            <Input
+              label="Search by tracking number"
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="enter tracking number..."
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter tracking number..."
             />
           </div>
           {(statusFilter || searchQuery) && (
             <div className="flex items-end">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setStatusFilter("");
                   setSearchQuery("");
                   setCurrentPage(1);
                 }}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 underline"
+                size="sm"
               >
-                clear filters
-              </button>
+                Clear filters
+              </Button>
             </div>
           )}
         </div>
 
-        <h2 className="text-xl font-bold mb-4">
-          orders {statusFilter && `(${statusFilter.toLowerCase()})`}
+        <h2 className="text-xl font-bold mb-4 text-gray-900">
+          Orders
+          {statusFilter && ` (${statusFilter})`}
           {searchQuery && ` matching "${searchQuery}"`}
         </h2>
 
         {isLoading ? (
-          <p>loading orders...</p>
+          <LoadingState message="Loading orders..." />
         ) : currentOrders.length > 0 ? (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-2">tracking #</th>
-                    <th className="text-left py-3 px-2">status</th>
-                    <th className="text-left py-3 px-2">date</th>
-                    <th className="text-right py-3 px-2">total</th>
-                    <th className="text-right py-3 px-2">actions</th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                      Tracking #
+                    </th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                      Status
+                    </th>
+                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                      Date
+                    </th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-700">
+                      Total
+                    </th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-700">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -229,22 +250,18 @@ export const AdminPage = () => {
                       key={order.id}
                       className="border-b hover:bg-gray-50 transition-colors"
                     >
-                      <td className="py-3 px-2 font-mono text-sm">
+                      <td className="py-3 px-2 font-mono text-sm text-gray-900">
                         {order.trackingNumber}
                       </td>
                       <td className="py-3 px-2">
-                        <span
-                          className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
+                        <Badge variant={getStatusVariant(order.status)}>
                           {order.status}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="py-3 px-2 text-sm">
+                      <td className="py-3 px-2 text-sm text-gray-700">
                         {new Date(order.purchaseDate).toLocaleDateString()}
                       </td>
-                      <td className="text-right py-3 px-2 font-medium">
+                      <td className="text-right py-3 px-2 font-medium text-gray-900">
                         ${order.total.toFixed(2)}
                       </td>
                       <td className="text-right py-3 px-2">
@@ -261,19 +278,20 @@ export const AdminPage = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-sm text-gray-600">
-                  showing {startIndex + 1} to{" "}
+                  Showing {startIndex + 1} to{" "}
                   {Math.min(endIndex, orders.length)} of {orders.length} orders
                 </div>
-                <div className="flex gap-2">
-                  <button
+                <div className="flex gap-2 items-center">
+                  <Button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    variant="outline"
+                    size="sm"
                   >
-                    previous
-                  </button>
+                    Previous
+                  </Button>
                   <div className="flex gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
@@ -287,41 +305,41 @@ export const AdminPage = () => {
                         pageNum = currentPage - 2 + i;
                       }
                       return (
-                        <button
+                        <Button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1 border rounded transition-colors ${
-                            currentPage === pageNum
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "border-gray-300 hover:bg-gray-50"
-                          }`}
+                          variant={
+                            currentPage === pageNum ? "primary" : "outline"
+                          }
+                          size="sm"
                         >
                           {pageNum}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
-                  <button
+                  <Button
                     onClick={() =>
                       setCurrentPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    variant="outline"
+                    size="sm"
                   >
-                    next
-                  </button>
+                    Next
+                  </Button>
                 </div>
               </div>
             )}
           </>
         ) : (
-          <p className="text-gray-600">
+          <p className="text-gray-600 py-8 text-center">
             {statusFilter || searchQuery
-              ? "no orders found matching your filters"
-              : "no orders yet"}
+              ? "No orders found matching your filters"
+              : "No orders yet"}
           </p>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

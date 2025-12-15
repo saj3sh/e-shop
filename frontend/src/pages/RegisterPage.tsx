@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { apiClient } from "../lib/apiClient";
 import { countryByCode } from "../lib/countries";
+import { Button, Input, Select, Card, Alert } from "../components/ui";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -68,6 +70,7 @@ export const RegisterPage = () => {
       };
 
       await apiClient.post("/auth/register", registrationData);
+      toast.success("Registration successful!");
       navigate("/login", {
         state: { message: "registration successful! please login" },
       });
@@ -79,134 +82,103 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-2">
-          Create an Account
-        </h1>
-        <p className="text-gray-600 text-center mb-6">
-          join eshop to start shopping
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-8">
+      <Card className="max-w-2xl w-full" padding="lg">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            Create an Account
+          </h1>
+          <p className="text-gray-600">Join EShop to start shopping</p>
+        </div>
 
         {redirectMessage && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md text-sm">
+          <Alert variant="info" className="mb-6">
             {redirectMessage}
-          </div>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information */}
           <div>
-            <h2 className="text-lg font-semibold mb-3">Personal Information</h2>
+            <h2 className="text-lg font-semibold mb-3 text-gray-900">
+              Personal Information
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <Input
+                type="text"
+                name="firstName"
+                label="First Name"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                type="text"
+                name="lastName"
+                label="Last Name"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <Input
+                type="email"
+                name="email"
+                label="Email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                type="tel"
+                name="phone"
+                label="Phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
             </div>
           </div>
 
           {/* Shipping Address */}
           <div>
-            <h2 className="text-lg font-semibold mb-3">Shipping Address</h2>
+            <h2 className="text-lg font-semibold mb-3 text-gray-900">
+              Shipping Address
+            </h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address *
-                </label>
-                <input
+              <Input
+                type="text"
+                name="shippingAddress"
+                label="Street Address"
+                value={formData.shippingAddress}
+                onChange={handleChange}
+                required
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
                   type="text"
-                  name="shippingAddress"
-                  value={formData.shippingAddress}
+                  name="shippingCity"
+                  label="City"
+                  value={formData.shippingCity}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    name="shippingCity"
-                    value={formData.shippingCity}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Country *
-                  </label>
-                  <select
-                    name="shippingCountryCode"
-                    value={formData.shippingCountryCode}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select a country</option>
-                    {Object.entries(countryByCode).map(([code, name]) => (
-                      <option key={code} value={code}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  name="shippingCountryCode"
+                  label="Country"
+                  value={formData.shippingCountryCode}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select a country</option>
+                  {Object.entries(countryByCode).map(([code, name]) => (
+                    <option key={code} value={code}>
+                      {name}
+                    </option>
+                  ))}
+                </Select>
               </div>
             </div>
           </div>
@@ -214,93 +186,80 @@ export const RegisterPage = () => {
           {/* Billing Address */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Billing Address</h2>
-              <label className="flex items-center text-sm">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Billing Address
+              </h2>
+              <label className="flex items-center text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={sameAsShipping}
                   onChange={(e) => setSameAsShipping(e.target.checked)}
-                  className="mr-2"
+                  className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                same as shipping
+                <span className="text-gray-700">Same as shipping</span>
               </label>
             </div>
 
             {!sameAsShipping && (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Street Address *
-                  </label>
-                  <input
+                <Input
+                  type="text"
+                  name="billingAddress"
+                  label="Street Address"
+                  value={formData.billingAddress}
+                  onChange={handleChange}
+                  required={!sameAsShipping}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
                     type="text"
-                    name="billingAddress"
-                    value={formData.billingAddress}
+                    name="billingCity"
+                    label="City"
+                    value={formData.billingCity}
                     onChange={handleChange}
                     required={!sameAsShipping}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      name="billingCity"
-                      value={formData.billingCity}
-                      onChange={handleChange}
-                      required={!sameAsShipping}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Country *
-                    </label>
-                    <select
-                      name="billingCountryCode"
-                      value={formData.billingCountryCode}
-                      onChange={handleChange}
-                      required={!sameAsShipping}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select a country</option>
-                      {Object.entries(countryByCode).map(([code, name]) => (
-                        <option key={code} value={code}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    name="billingCountryCode"
+                    label="Country"
+                    value={formData.billingCountryCode}
+                    onChange={handleChange}
+                    required={!sameAsShipping}
+                  >
+                    <option value="">Select a country</option>
+                    {Object.entries(countryByCode).map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
               </div>
             )}
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+          {error && <Alert variant="error">{error}</Alert>}
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            isLoading={loading}
+            className="w-full"
+            size="lg"
           >
-            {loading ? "creating account..." : "create account"}
-          </button>
+            {loading ? "Creating account..." : "Create account"}
+          </Button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-6">
-          already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            login here
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Login here
           </Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 };

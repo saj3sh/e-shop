@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useCartStore } from "../stores/cartStore";
 import { apiClient } from "../lib/apiClient";
 import { CardIcon } from "../components/CardIcon";
 import { AddressManagement } from "../components/AddressManagement";
+import { Button, Card, Input, Alert } from "../components/ui";
 
 export const CheckoutPage = () => {
   const { items, clearCart, getTotalPrice } = useCartStore();
@@ -26,7 +28,12 @@ export const CheckoutPage = () => {
     setError("");
 
     if (!selectedShippingId || !selectedBillingId) {
-      setError("Please select both shipping and billing addresses");
+      toast.error("Please select both shipping and billing addresses");
+      return;
+    }
+
+    if (!cardNumber || cardNumber.length < 13) {
+      toast.error("Please enter a valid card number");
       return;
     }
 
@@ -45,6 +52,7 @@ export const CheckoutPage = () => {
       });
 
       clearCart();
+      toast.success("Order placed successfully!");
       navigate(`/orders/${response.data.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || "checkout failed");
@@ -55,64 +63,65 @@ export const CheckoutPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">checkout</h1>
+      <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        Checkout
+      </h1>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">order summary</h2>
+      <Card className="mb-6" padding="lg">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">Order Summary</h2>
         <div className="space-y-2 mb-4">
           {items.map((item) => (
-            <div key={item.productId} className="flex justify-between">
+            <div
+              key={item.productId}
+              className="flex justify-between text-gray-700"
+            >
               <span>
                 {item.name} × {item.quantity}
               </span>
-              <span>${(item.price * item.quantity).toFixed(2)}</span>
+              <span className="font-medium">
+                ${(item.price * item.quantity).toFixed(2)}
+              </span>
             </div>
           ))}
         </div>
         <div className="border-t pt-4">
           <div className="flex justify-between text-xl font-bold">
-            <span>Total:</span>
-            <span>${getTotalPrice().toFixed(2)}</span>
+            <span className="text-gray-900">Total:</span>
+            <span className="text-blue-600">${getTotalPrice().toFixed(2)}</span>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-md p-6 space-y-6"
-      >
-        <AddressManagement
-          showSelector={true}
-          selectedShippingId={selectedShippingId}
-          selectedBillingId={selectedBillingId}
-          onShippingSelect={setSelectedShippingId}
-          onBillingSelect={setSelectedBillingId}
-        />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card padding="lg">
+          <AddressManagement
+            showSelector={true}
+            selectedShippingId={selectedShippingId}
+            selectedBillingId={selectedBillingId}
+            onShippingSelect={setSelectedShippingId}
+            onBillingSelect={setSelectedBillingId}
+          />
+        </Card>
 
-        {/* Payment Information */}
-        <div>
-          <h2 className="text-xl font-bold mb-4">payment information</h2>
+        <Card padding="lg">
+          <h2 className="text-xl font-bold mb-4 text-gray-900">
+            Payment Information
+          </h2>
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                card number
-              </label>
-              <input
-                type="text"
-                value={cardNumber}
-                onChange={(e) =>
-                  setCardNumber(e.target.value.replace(/\s/g, ""))
-                }
-                placeholder="1234567812345678"
-                maxLength={16}
-                className="w-full px-4 py-2 border rounded-md"
-              />
-            </div>
+            <Input
+              type="text"
+              label="Card Number"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, ""))}
+              placeholder="1234567812345678"
+              maxLength={16}
+              required
+            />
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                card type
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Card Type
               </label>
               <div className="grid grid-cols-4 gap-3">
                 {["Visa", "Mastercard", "Amex", "Discover"].map((type) => (
@@ -122,7 +131,7 @@ export const CheckoutPage = () => {
                     onClick={() => setCardType(type)}
                     className={`flex flex-col items-center justify-center p-3 border-2 rounded-lg transition-all ${
                       cardType === type
-                        ? "border-blue-600 bg-blue-50"
+                        ? "border-blue-600 bg-blue-50 shadow-md"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -133,19 +142,13 @@ export const CheckoutPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md">{error}</div>
-        )}
+        {error && <Alert variant="error">{error}</Alert>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-semibold disabled:bg-gray-400"
-        >
-          {loading ? "placing order..." : "place order"}
-        </button>
+        <Button type="submit" isLoading={loading} className="w-full" size="lg">
+          {loading ? "Placing order..." : "Place Order"}
+        </Button>
       </form>
     </div>
   );

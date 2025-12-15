@@ -1,8 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { apiClient } from "../lib/apiClient";
 import { useState } from "react";
 import { AddressManagement } from "../components/AddressManagement";
+import { Button, Input, Card, Badge } from "../components/ui";
+import { LoadingState } from "../components/LoadingState";
 
 interface Order {
   id: string;
@@ -50,6 +53,10 @@ export const UserPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer-me"] });
       setIsEditing(false);
+      toast.success("Profile updated successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to update profile. Please try again.");
     },
   });
 
@@ -82,100 +89,74 @@ export const UserPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">My Profile</h1>
+      <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        My Profile
+      </h1>
 
       {/* Customer Information */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <Card className="mb-8" padding="lg">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Personal Information</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Personal Information
+          </h2>
           {!isEditing && customer && (
-            <button
-              onClick={handleEditClick}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
+            <Button onClick={handleEditClick} variant="primary">
               Edit
-            </button>
+            </Button>
           )}
         </div>
 
         {isLoadingCustomer ? (
-          <p>Loading...</p>
+          <LoadingState message="Loading..." />
         ) : customer ? (
           isEditing ? (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={editForm.firstName}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, firstName: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={editForm.lastName}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, lastName: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={editForm.phone}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, phone: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={customer.email}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Email cannot be changed
-                </p>
-              </div>
-              {updateMutation.isError && (
-                <p className="text-red-600 text-sm">
-                  Failed to update profile. Please try again.
-                </p>
-              )}
+              <Input
+                label="First Name"
+                type="text"
+                value={editForm.firstName}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, firstName: e.target.value })
+                }
+              />
+              <Input
+                label="Last Name"
+                type="text"
+                value={editForm.lastName}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, lastName: e.target.value })
+                }
+              />
+              <Input
+                label="Phone"
+                type="tel"
+                value={editForm.phone}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, phone: e.target.value })
+                }
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={customer.email}
+                disabled
+                helperText="Email cannot be changed"
+              />
               <div className="flex gap-3">
-                <button
+                <Button
                   onClick={handleSave}
-                  disabled={updateMutation.isPending}
-                  className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                  isLoading={updateMutation.isPending}
+                  variant="primary"
                 >
                   {updateMutation.isPending ? "Saving..." : "Save"}
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleCancel}
                   disabled={updateMutation.isPending}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:bg-gray-200"
+                  variant="secondary"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -199,46 +180,55 @@ export const UserPage = () => {
         ) : (
           <p className="text-red-600">Failed to load customer information</p>
         )}
-      </div>
+      </Card>
 
       {/* Orders Section */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4">My Orders</h2>
+      <Card className="mb-8" padding="lg">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">My Orders</h2>
 
         {isLoadingOrders ? (
-          <p>Loading orders...</p>
+          <LoadingState message="Loading orders..." />
         ) : orders && orders.length > 0 ? (
           <div className="space-y-4">
             {orders.map((order) => (
               <Link
                 key={order.id}
                 to={`/orders/${order.id}`}
-                className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                className="block border rounded-lg p-4 hover:bg-gray-50 hover:border-blue-300 transition-all"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-semibold">
+                    <p className="font-semibold text-gray-900">
                       Order #{order.trackingNumber}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(order.purchaseDate).toLocaleDateString()}
+                    <p className="text-sm text-gray-600 mt-1">
+                      {new Date(order.purchaseDate).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
                     </p>
-                    <p className="text-sm mt-1">
-                      Status:{" "}
-                      <span
-                        className={`font-medium ${
-                          order.status === "Completed"
-                            ? "text-green-600"
+                    <div className="mt-2">
+                      <Badge
+                        variant={
+                          order.status === "Completed" ||
+                          order.status === "Delivered"
+                            ? "success"
                             : order.status === "Pending"
-                            ? "text-yellow-600"
-                            : "text-blue-600"
-                        }`}
+                            ? "warning"
+                            : "info"
+                        }
                       >
                         {order.status}
-                      </span>
-                    </p>
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="font-bold">${order.total.toFixed(2)}</p>
+                  <p className="font-bold text-gray-900">
+                    ${order.total.toFixed(2)}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -246,13 +236,13 @@ export const UserPage = () => {
         ) : (
           <p className="text-gray-600">No orders yet</p>
         )}
-      </div>
+      </Card>
 
       {/* Addresses Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">My Addresses</h2>
+      <Card padding="lg">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">My Addresses</h2>
         <AddressManagement />
-      </div>
+      </Card>
     </div>
   );
 };
