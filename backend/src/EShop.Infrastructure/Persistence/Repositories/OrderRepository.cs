@@ -38,6 +38,14 @@ public class OrderRepository : IOrderRepository
             .ToListAsync(ct);
     }
 
+    public async Task<List<Order>> GetAllAsync(CancellationToken ct = default)
+    {
+        return await _context.Orders
+            .Include(o => o.Items)
+            .OrderByDescending(o => o.PurchaseDate)
+            .ToListAsync(ct);
+    }
+
     public void Add(Order order)
     {
         _context.Orders.Add(order);

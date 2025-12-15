@@ -10,11 +10,13 @@ namespace EShop.Api.Controllers;
 public class AdminController : ControllerBase
 {
     [HttpGet("orders")]
-    public async Task<IActionResult> GetIncompleteOrders(
-        [FromServices] GetIncompleteOrdersQueryHandler handler,
-        CancellationToken ct)
+    public async Task<IActionResult> GetOrders(
+        [FromServices] GetOrdersQueryHandler handler,
+        [FromQuery] string? status = null,
+        [FromQuery] string? trackingNumber = null,
+        CancellationToken ct = default)
     {
-        var query = new GetIncompleteOrdersQuery();
+        var query = new GetOrdersQuery(status, trackingNumber);
         var result = await handler.HandleAsync(query, ct);
 
         if (!result.IsSuccess)
@@ -23,13 +25,14 @@ public class AdminController : ControllerBase
         return Ok(result.Value);
     }
 
-    [HttpPost("orders/{id:guid}/complete")]
-    public async Task<IActionResult> CompleteOrder(
+    [HttpPut("orders/{id:guid}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(
         Guid id,
-        [FromServices] CompleteOrderCommandHandler handler,
+        [FromBody] UpdateStatusRequest request,
+        [FromServices] UpdateOrderStatusCommandHandler handler,
         CancellationToken ct)
     {
-        var command = new CompleteOrderCommand(id);
+        var command = new UpdateOrderStatusCommand(id, request.Status);
         var result = await handler.HandleAsync(command, ct);
 
         if (!result.IsSuccess)
@@ -38,3 +41,5 @@ public class AdminController : ControllerBase
         return Ok();
     }
 }
+
+public record UpdateStatusRequest(string Status);
