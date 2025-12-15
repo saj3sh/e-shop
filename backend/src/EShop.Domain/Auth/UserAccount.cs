@@ -26,9 +26,10 @@ public class UserAccount : Common.AggregateRoot
         CreatedAt = DateTime.UtcNow;
     }
 
-    public void RecordLogin()
+    public void RecordLogin(string? ipAddress = null)
     {
         LastLoginAt = DateTime.UtcNow;
+        RaiseDomainEvent(new UserLoggedIn(Id.Value, Email.Value, ipAddress, DateTime.UtcNow));
     }
 
     public RefreshToken AddRefreshToken(string token, DateTime expiresAt)
@@ -44,6 +45,7 @@ public class UserAccount : Common.AggregateRoot
         if (existing != null)
         {
             existing.Revoke();
+            RaiseDomainEvent(new UserLoggedOut(Id.Value, Email.Value, DateTime.UtcNow));
         }
     }
 

@@ -47,7 +47,8 @@ public class AuthController : ControllerBase
         [FromServices] LoginCommandHandler handler,
         CancellationToken ct)
     {
-        var command = new LoginCommand(request.Email);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var command = new LoginCommand(request.Email, ipAddress);
         var result = await handler.HandleAsync(command, ct);
 
         if (!result.IsSuccess)

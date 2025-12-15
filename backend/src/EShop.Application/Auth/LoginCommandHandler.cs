@@ -36,7 +36,9 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, Result<LoginRes
                 return Result<LoginResult>.Failure("user not found", "USER_NOT_FOUND");
             }
 
-            user.RecordLogin();
+            await _unitOfWork.BeginTransactionAsync(ct);
+
+            user.RecordLogin(command.IpAddress);
             _userAccountRepo.Update(user);
 
             var accessToken = _jwtService.GenerateAccessToken(user);
@@ -53,6 +55,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, Result<LoginRes
             _userAccountRepo.AddRefreshToken(refreshTokenEntity);
 
             await _unitOfWork.SaveChangesAsync(ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
 
             return Result<LoginResult>.Success(new LoginResult(
                 accessToken,
@@ -63,6 +66,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, Result<LoginRes
         }
         catch (Exception ex)
         {
+            await _unitOfWork.RollbackTransactionAsync(ct);
             return Result<LoginResult>.Failure($"login failed: {ex.Message}");
         }
     }
