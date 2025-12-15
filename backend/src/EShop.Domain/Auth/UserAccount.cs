@@ -5,8 +5,8 @@ namespace EShop.Domain.Auth;
 /// </summary>
 public class UserAccount : Common.AggregateRoot
 {
-    public UserAccountId Id { get; private set; }
-    public Customers.Email Email { get; private set; }
+    public UserAccountId Id { get; private set; } = null!;
+    public Customers.Email Email { get; private set; } = null!;
     public UserRole Role { get; private set; }
     public Customers.CustomerId? CustomerId { get; private set; }
     public DateTime CreatedAt { get; private set; }

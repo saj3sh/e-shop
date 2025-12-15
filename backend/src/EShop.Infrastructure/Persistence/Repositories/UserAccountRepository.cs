@@ -43,21 +43,18 @@ public class UserAccountRepository : IUserAccountRepository
             .FirstOrDefaultAsync(u => u.Id == refreshToken.UserAccountId, ct);
     }
 
-    public async Task AddAsync(UserAccount account, CancellationToken ct = default)
+    public void Add(UserAccount account)
     {
-        await _context.UserAccounts.AddAsync(account, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.UserAccounts.Add(account);
     }
 
-    public async Task UpdateAsync(UserAccount account, CancellationToken ct = default)
+    public void Update(UserAccount account)
     {
-        // EF Core auto-detects changes. so just save
-        await _context.SaveChangesAsync(ct);
+        _context.UserAccounts.Update(account);
     }
 
-    public async Task AddRefreshTokenAsync(RefreshToken refreshToken, CancellationToken ct = default)
+    public void AddRefreshToken(RefreshToken refreshToken)
     {
-        await _context.RefreshTokens.AddAsync(refreshToken, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.RefreshTokens.Add(refreshToken);
     }
 }

@@ -3,10 +3,9 @@ namespace EShop.Domain.Auth;
 /// <summary>
 /// refresh token entity for token rotation
 /// </summary>
-public class RefreshToken
+public class RefreshToken : Common.Entity<Guid>
 {
-    public Guid Id { get; private set; }
-    public UserAccountId UserAccountId { get; private set; }
+    public UserAccountId UserAccountId { get; private set; } = null!;
     public string Token { get; private set; }
     public DateTime ExpiresAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -14,8 +13,8 @@ public class RefreshToken
     public DateTime? RevokedAt { get; private set; }
 
     public RefreshToken(Guid id, UserAccountId userAccountId, string token, DateTime expiresAt, DateTime createdAt)
+        : base(id)
     {
-        Id = id;
         UserAccountId = userAccountId;
         Token = token;
         ExpiresAt = expiresAt;

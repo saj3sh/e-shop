@@ -22,10 +22,10 @@ public class AuthController : ControllerBase
             request.Phone,
             request.ShippingAddress,
             request.ShippingCity,
-            request.ShippingCountry,
+            request.ShippingCountryCode,
             request.BillingAddress,
             request.BillingCity,
-            request.BillingCountry
+            request.BillingCountryCode
         );
         var result = await handler.HandleAsync(command, ct);
 
@@ -126,10 +126,10 @@ public record RegisterRequest(
     string Phone,
     string ShippingAddress,
     string ShippingCity,
-    string ShippingCountry,
+    string ShippingCountryCode,
     string BillingAddress,
     string BillingCity,
-    string BillingCountry
+    string BillingCountryCode
 );
 
 public record LoginRequest(string Email);
