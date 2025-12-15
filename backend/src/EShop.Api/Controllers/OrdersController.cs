@@ -25,7 +25,6 @@ public class OrdersController : ControllerBase
             request.Items.Select(i => new OrderItemDto(i.ProductId, i.Quantity)).ToList(),
             request.ShippingAddressId,
             request.BillingAddressId,
-            request.ShippingCountry,
             request.CardNumber,
             request.CardType
         );
@@ -74,9 +73,8 @@ public class OrdersController : ControllerBase
 
 public record CheckoutRequest(
     List<CheckoutItemRequest> Items,
-    Guid ShippingAddressId,
-    Guid BillingAddressId,
-    string ShippingCountry,
+    Guid? ShippingAddressId,
+    Guid? BillingAddressId,
     string? CardNumber,
     string? CardType
 );

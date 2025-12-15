@@ -34,15 +34,13 @@ public class OrderRepository : IOrderRepository
             .ToListAsync(ct);
     }
 
-    public async Task AddAsync(Order order, CancellationToken ct = default)
+    public void Add(Order order)
     {
-        await _context.Orders.AddAsync(order, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.Orders.Add(order);
     }
 
-    public async Task UpdateAsync(Order order, CancellationToken ct = default)
+    public void Update(Order order)
     {
         _context.Orders.Update(order);
-        await _context.SaveChangesAsync(ct);
     }
 }

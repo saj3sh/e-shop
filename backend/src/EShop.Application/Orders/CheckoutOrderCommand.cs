@@ -8,9 +8,8 @@ namespace EShop.Application.Orders;
 public record CheckoutOrderCommand(
     Guid CustomerId,
     List<OrderItemDto> Items,
-    Guid ShippingAddressId,
-    Guid BillingAddressId,
-    string ShippingCountry,
+    Guid? ShippingAddressId = null,
+    Guid? BillingAddressId = null,
     string? CardNumber = null,
     string? CardType = null
 ) : ICommand<Result<OrderDto>>;
@@ -57,15 +56,18 @@ public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand,
     private readonly IOrderRepository _orderRepo;
     private readonly IProductRepository _productRepo;
     private readonly ICustomerRepository _customerRepo;
+    private readonly IUnitOfWork _unitOfWork;
 
     public CheckoutOrderCommandHandler(
         IOrderRepository orderRepo,
         IProductRepository productRepo,
-        ICustomerRepository customerRepo)
+        ICustomerRepository customerRepo,
+        IUnitOfWork unitOfWork)
     {
         _orderRepo = orderRepo;
         _productRepo = productRepo;
         _customerRepo = customerRepo;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<OrderDto>> HandleAsync(CheckoutOrderCommand command, CancellationToken ct = default)
@@ -75,16 +77,37 @@ public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand,
             if (command.Items.Count == 0)
                 return Result<OrderDto>.Failure("Cart is empty");
 
+            // Begin transaction for order checkout
+            await _unitOfWork.BeginTransactionAsync(ct);
+
             var customerId = new CustomerId(command.CustomerId);
-            var trackingNumber = TrackingNumber.Generate(command.ShippingCountry);
+
+            // Get customer to use default addresses if not specified
+            var customer = await _customerRepo.GetByIdAsync(customerId, ct);
+            if (customer == null)
+                return Result<OrderDto>.Failure("Customer not found");
+
+            // Use provided addresses or fall back to customer defaults
+            var shippingAddressId = command.ShippingAddressId ?? customer.DefaultShippingAddressId;
+            var billingAddressId = command.BillingAddressId ?? customer.DefaultBillingAddressId;
+
+            if (shippingAddressId == null || billingAddressId == null)
+                return Result<OrderDto>.Failure("Customer must have default addresses set");
+
+            // Get shipping address to infer country code for tracking number
+            var shippingAddress = await _customerRepo.GetAddressAsync(shippingAddressId.Value, ct);
+            if (shippingAddress == null)
+                return Result<OrderDto>.Failure("Shipping address not found");
+
+            var trackingNumber = TrackingNumber.Generate(shippingAddress.Country);
             var paymentCard = PaymentCard.CreateMasked(command.CardNumber, command.CardType);
 
             var order = new Order(
                 OrderId.New(),
                 customerId,
                 trackingNumber,
-                command.ShippingAddressId,
-                command.BillingAddressId,
+                shippingAddressId.Value,
+                billingAddressId.Value,
                 DateTime.UtcNow,
                 paymentCard
             );
@@ -106,12 +129,15 @@ public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand,
                 order.AddItem(orderItem);
             }
 
-            await _orderRepo.AddAsync(order, ct);
+            _orderRepo.Add(order);
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
 
             return Result<OrderDto>.Success((OrderDto)order);
         }
         catch (Exception ex)
         {
+            await _unitOfWork.RollbackTransactionAsync(ct);
             return Result<OrderDto>.Failure($"checkout failed: {ex.Message}");
         }
     }
