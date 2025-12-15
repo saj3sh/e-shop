@@ -6,13 +6,14 @@ using EShop.Domain.Common;
 namespace EShop.Infrastructure.Persistence;
 
 /// <summary>
-/// Unit of Work implementation with domain event dispatching
+/// unit of work with domain event dispatching
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
     private readonly IDomainEventDispatcher _eventDispatcher;
     private IDbContextTransaction? _currentTransaction;
+    private List<IDomainEvent> _pendingEvents = new();
 
     public UnitOfWork(AppDbContext context, IDomainEventDispatcher eventDispatcher)
     {
@@ -22,28 +23,30 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Collect all domain events from aggregates
         var aggregates = _context.ChangeTracker
             .Entries<AggregateRoot>()
             .Where(e => e.Entity.DomainEvents.Any())
             .Select(e => e.Entity)
             .ToList();
-
         var domainEvents = aggregates
             .SelectMany(a => a.DomainEvents)
             .ToList();
-
-        // Clear events before saving (prevents re-dispatching)
         foreach (var aggregate in aggregates)
         {
             aggregate.ClearDomainEvents();
         }
 
-        // Save changes to database
         var result = await _context.SaveChangesAsync(cancellationToken);
 
-        // Dispatch events after successful save
-        await _eventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+        // if we're in a transaction, store events to dispatch after commit
+        if (_currentTransaction != null)
+        {
+            _pendingEvents.AddRange(domainEvents);
+        }
+        else
+        {
+            await _eventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+        }
 
         return result;
     }
@@ -54,7 +57,6 @@ public class UnitOfWork : IUnitOfWork
         {
             throw new InvalidOperationException("A transaction is already in progress.");
         }
-
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
     }
 
@@ -64,11 +66,16 @@ public class UnitOfWork : IUnitOfWork
         {
             throw new InvalidOperationException("No transaction in progress.");
         }
-
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
             await _currentTransaction.CommitAsync(cancellationToken);
+
+            // dispatch pending events after commit
+            if (_pendingEvents.Any())
+            {
+                await _eventDispatcher.DispatchAsync(_pendingEvents, cancellationToken);
+                _pendingEvents.Clear();
+            }
         }
         catch
         {
@@ -92,6 +99,8 @@ public class UnitOfWork : IUnitOfWork
         try
         {
             await _currentTransaction.RollbackAsync(cancellationToken);
+            // Clear pending events on rollback - transaction failed, don't dispatch
+            _pendingEvents.Clear();
         }
         finally
         {
