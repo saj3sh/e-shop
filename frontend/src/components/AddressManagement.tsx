@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import { apiClient } from "../lib/apiClient";
 import { AddressSelector } from "./AddressSelector";
 import { AddressForm } from "./AddressForm";
@@ -82,6 +83,7 @@ export const AddressManagement = ({
         }
       } catch (err) {
         console.error("Failed to fetch addresses", err);
+        toast.error("Failed to load addresses");
       } finally {
         setLoading(false);
       }
@@ -123,6 +125,7 @@ export const AddressManagement = ({
           setSelectedBillingId(existingAddress.id);
           setShowBillingForm(false);
         }
+        toast.info("Using existing address");
         return;
       }
       // If types don't match, we'll create a new address below
@@ -140,6 +143,7 @@ export const AddressManagement = ({
     }
 
     await fetchAddresses(false);
+    toast.success("Address added successfully");
   };
 
   const handleSetDefaultAddress = async (
@@ -151,8 +155,10 @@ export const AddressManagement = ({
         addressType,
       });
       await fetchAddresses(false);
+      toast.success(`Default ${addressType.toLowerCase()} address updated`);
     } catch (err) {
       console.error("Failed to set default address", err);
+      toast.error("Failed to set default address");
     }
   };
 
@@ -169,9 +175,10 @@ export const AddressManagement = ({
       }
 
       await fetchAddresses(false);
+      toast.success("Address deleted successfully");
     } catch (err) {
       console.error("Failed to delete address", err);
-      alert("Failed to delete address. Please try again.");
+      toast.error("Failed to delete address. Please try again.");
     }
   };
 
