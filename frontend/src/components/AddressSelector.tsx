@@ -14,6 +14,7 @@ interface AddressSelectorProps {
   onAddressSelect: (addressId: string | null) => void;
   onCreateNew: () => void;
   onSetDefault?: (addressId: string) => void;
+  onDelete?: (addressId: string) => void;
   label: string;
   addressType: "shipping" | "billing";
   defaultAddressId: string | null;
@@ -25,6 +26,7 @@ export const AddressSelector = ({
   onAddressSelect,
   onCreateNew,
   onSetDefault,
+  onDelete,
   label,
   addressType,
   defaultAddressId,
@@ -91,23 +93,43 @@ export const AddressSelector = ({
                     {address.city}, {address.country}
                   </p>
                 </div>
-                {onSetDefault && defaultAddressId !== address.id && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSetDefault(address.id);
-                    }}
-                    className="mt-2 text-xs text-blue-600 hover:text-blue-700 underline"
-                  >
-                    set as default
-                  </button>
-                )}
-                {defaultAddressId === address.id && (
-                  <span className="mt-2 text-xs text-green-600 font-medium inline-block">
-                    ✓ default
-                  </span>
-                )}
+                <div className="flex gap-3 mt-2">
+                  {onSetDefault && defaultAddressId !== address.id && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSetDefault(address.id);
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700 underline"
+                    >
+                      set as default
+                    </button>
+                  )}
+                  {defaultAddressId === address.id && (
+                    <span className="text-xs text-green-600 font-medium">
+                      ✓ default
+                    </span>
+                  )}
+                  {onDelete && defaultAddressId !== address.id && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            "Are you sure you want to delete this address?"
+                          )
+                        ) {
+                          onDelete(address.id);
+                        }
+                      }}
+                      className="text-xs text-red-600 hover:text-red-700 underline"
+                    >
+                      delete
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           )}

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using EShop.Domain.Customers;
-using EShop.Application.Common;
+using EShop.Application.Addresses;
 
 namespace EShop.Api.Controllers;
 
@@ -10,93 +9,89 @@ namespace EShop.Api.Controllers;
 [Authorize]
 public class AddressesController : ControllerBase
 {
-    private readonly ICustomerRepository _customerRepo;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public AddressesController(ICustomerRepository customerRepo, IUnitOfWork unitOfWork)
-    {
-        _customerRepo = customerRepo;
-        _unitOfWork = unitOfWork;
-    }
-
     [HttpGet]
-    public async Task<IActionResult> GetCustomerAddresses(CancellationToken ct)
+    public async Task<IActionResult> GetCustomerAddresses(
+        [FromServices] GetCustomerAddressesQueryHandler handler,
+        CancellationToken ct)
     {
         var customerIdClaim = User.FindFirst("CustomerId")?.Value;
         if (customerIdClaim == null)
             return Unauthorized();
 
         var customerId = Guid.Parse(customerIdClaim);
-        var customer = await _customerRepo.GetByIdAsync(new CustomerId(customerId), ct);
-        if (customer == null)
-            return NotFound("Customer not found");
+        var query = new GetCustomerAddressesQuery(customerId);
+        var result = await handler.HandleAsync(query, ct);
 
-        var addresses = await _customerRepo.GetCustomerAddressesAsync(customerId, ct);
+        if (!result.IsSuccess)
+            return NotFound(new { error = result.Error });
 
-        return Ok(new
-        {
-            addresses = addresses.Select(a => new
-            {
-                id = a.Id,
-                line1 = a.Line1,
-                city = a.City,
-                country = a.Country,
-                type = a.Type.ToString()
-            }),
-            defaultShippingAddressId = customer.DefaultShippingAddressId,
-            defaultBillingAddressId = customer.DefaultBillingAddressId
-        });
+        return Ok(result.Value);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAddress([FromBody] CreateAddressRequest request, CancellationToken ct)
+    public async Task<IActionResult> CreateAddress(
+        [FromBody] CreateAddressRequest request,
+        [FromServices] CreateAddressCommandHandler handler,
+        CancellationToken ct)
     {
         var customerIdClaim = User.FindFirst("CustomerId")?.Value;
         if (customerIdClaim == null)
             return Unauthorized();
 
         var customerId = Guid.Parse(customerIdClaim);
-
-        var address = new Address(
-            Guid.NewGuid(),
+        var command = new CreateAddressCommand(
+            customerId,
             request.Line1,
             request.City,
             request.Country,
-            Enum.Parse<AddressType>(request.Type),
-            customerId
+            request.Type
         );
 
-        _customerRepo.AddAddress(address);
-        await _unitOfWork.SaveChangesAsync(ct);
+        var result = await handler.HandleAsync(command, ct);
 
-        return Ok(new { id = address.Id });
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.Error });
+
+        return Ok(new { id = result.Value });
     }
 
     [HttpPut("{addressId}/set-default")]
-    public async Task<IActionResult> SetDefaultAddress(Guid addressId, [FromBody] SetDefaultAddressRequest request, CancellationToken ct)
+    public async Task<IActionResult> SetDefaultAddress(
+        Guid addressId,
+        [FromBody] SetDefaultAddressRequest request,
+        [FromServices] SetDefaultAddressCommandHandler handler,
+        CancellationToken ct)
     {
         var customerIdClaim = User.FindFirst("CustomerId")?.Value;
         if (customerIdClaim == null)
             return Unauthorized();
 
-        var customerId = new CustomerId(Guid.Parse(customerIdClaim));
-        var customer = await _customerRepo.GetByIdAsync(customerId, ct);
-        if (customer == null)
-            return NotFound("Customer not found");
+        var customerId = Guid.Parse(customerIdClaim);
+        var command = new SetDefaultAddressCommand(customerId, addressId, request.AddressType);
+        var result = await handler.HandleAsync(command, ct);
 
-        var address = await _customerRepo.GetAddressAsync(addressId, ct);
-        if (address == null || address.CustomerId != customerId.Value)
-            return NotFound("Address not found");
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.Error });
 
-        if (request.AddressType == "Shipping")
-            customer.SetDefaultShippingAddress(addressId);
-        else if (request.AddressType == "Billing")
-            customer.SetDefaultBillingAddress(addressId);
-        else
-            return BadRequest("Invalid address type");
+        return Ok();
+    }
 
-        _customerRepo.Update(customer);
-        await _unitOfWork.SaveChangesAsync(ct);
+    [HttpDelete("{addressId}")]
+    public async Task<IActionResult> DeleteAddress(
+        Guid addressId,
+        [FromServices] DeleteAddressCommandHandler handler,
+        CancellationToken ct)
+    {
+        var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+        if (customerIdClaim == null)
+            return Unauthorized();
+
+        var customerId = Guid.Parse(customerIdClaim);
+        var command = new DeleteAddressCommand(customerId, addressId);
+        var result = await handler.HandleAsync(command, ct);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.Error });
 
         return Ok();
     }

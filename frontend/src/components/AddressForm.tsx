@@ -10,12 +10,18 @@ interface AddressFormProps {
   }) => Promise<void>;
   onCancel: () => void;
   addressType: "Shipping" | "Billing";
+  shippingAddress?: {
+    line1: string;
+    city: string;
+    country: string;
+  };
 }
 
 export const AddressForm = ({
   onSubmit,
   onCancel,
   addressType,
+  shippingAddress,
 }: AddressFormProps) => {
   const [formData, setFormData] = useState({
     line1: "",
@@ -29,6 +35,16 @@ export const AddressForm = ({
     code,
     name,
   }));
+
+  const handleCopyFromShipping = () => {
+    if (shippingAddress) {
+      setFormData({
+        line1: shippingAddress.line1,
+        city: shippingAddress.city,
+        country: shippingAddress.country,
+      });
+    }
+  };
 
   const handleSubmit = async () => {
     setError("");
@@ -53,7 +69,18 @@ export const AddressForm = ({
 
   return (
     <div className="border rounded-md p-4 space-y-4">
-      <h3 className="font-semibold">Add New {addressType} Address</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Add New {addressType} Address</h3>
+        {addressType === "Billing" && shippingAddress && (
+          <button
+            type="button"
+            onClick={handleCopyFromShipping}
+            className="text-sm text-blue-600 hover:text-blue-700 underline"
+          >
+            copy from shipping address
+          </button>
+        )}
+      </div>
 
       <div>
         <label className="block text-sm font-medium mb-1">

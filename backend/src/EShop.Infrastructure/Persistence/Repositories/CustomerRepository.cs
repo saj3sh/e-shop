@@ -17,26 +17,9 @@ public class CustomerRepository : ICustomerRepository
         return await _context.Customers.FindAsync([id], ct);
     }
 
-    public async Task<Address?> GetAddressAsync(Guid addressId, CancellationToken ct = default)
-    {
-        return await _context.Addresses.FindAsync([addressId], ct);
-    }
-
-    public async Task<List<Address>> GetCustomerAddressesAsync(Guid customerId, CancellationToken ct = default)
-    {
-        return await _context.Addresses
-            .Where(a => a.CustomerId == customerId)
-            .ToListAsync(ct);
-    }
-
     public void Add(Customer customer)
     {
         _context.Customers.Add(customer);
-    }
-
-    public void AddAddress(Address address)
-    {
-        _context.Addresses.Add(address);
     }
 
     public void Update(Customer customer)
