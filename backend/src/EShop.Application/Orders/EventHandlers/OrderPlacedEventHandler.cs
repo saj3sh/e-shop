@@ -1,26 +1,37 @@
 using EShop.Application.Common;
 using EShop.Domain.Orders;
+using EShop.Domain.Common;
 
 namespace EShop.Application.Orders.EventHandlers;
 
 /// <summary>
-/// Example domain event handler for OrderPlaced event
+/// Domain event handler for OrderPlaced event
 /// </summary>
 public class OrderPlacedEventHandler : IDomainEventHandler<OrderPlaced>
 {
-    public OrderPlacedEventHandler()
+    private readonly IActivityLogRepository _activityLogRepo;
+
+    public OrderPlacedEventHandler(IActivityLogRepository activityLogRepo)
     {
+        _activityLogRepo = activityLogRepo;
     }
 
     public async Task HandleAsync(OrderPlaced domainEvent, CancellationToken cancellationToken = default)
     {
-        // Example: Send order confirmation email, update inventory, create activity log, etc.
-        // TODO: Implement actual business logic
+        // Log order placement activity
+        var activityLog = ActivityLog.Create(
+            entityType: "Order",
+            entityId: domainEvent.OrderId.Value.ToString(),
+            action: "OrderPlaced",
+            userId: domainEvent.CustomerId.Value.ToString(),
+            details: $"Order {domainEvent.OrderId.Value} was placed"
+        );
+
+        await _activityLogRepo.AddAsync(activityLog, cancellationToken);
+
+        // TODO: Additional actions
         // - Send confirmation email
         // - Reserve inventory
-        // - Create activity log entry
         // - Notify other systems
-
-        await Task.CompletedTask;
     }
 }

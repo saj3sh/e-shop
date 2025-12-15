@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using EShop.Domain.Customers;
+using EShop.Domain.Addresses;
 using EShop.Domain.Products;
 using EShop.Domain.Orders;
 using EShop.Domain.Auth;
+using EShop.Domain.Common;
 
 namespace EShop.Infrastructure.Persistence;
 
@@ -19,6 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<DataImportRecord> CsvImports => Set<DataImportRecord>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -189,6 +192,22 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(i => i.Id);
             entity.Property(i => i.Checksum).HasMaxLength(64);
+        });
+
+        // activity log
+        modelBuilder.Entity<ActivityLog>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.EntityType).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.EntityId).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.Action).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.UserId).HasMaxLength(100);
+            entity.Property(a => a.UserEmail).HasMaxLength(255);
+            entity.Property(a => a.Details).HasMaxLength(1000);
+            entity.Property(a => a.IpAddress).HasMaxLength(50);
+            entity.HasIndex(a => new { a.EntityType, a.EntityId });
+            entity.HasIndex(a => a.UserId);
+            entity.HasIndex(a => a.Timestamp);
         });
     }
 }
