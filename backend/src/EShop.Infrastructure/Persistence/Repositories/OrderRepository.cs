@@ -15,12 +15,15 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetByIdAsync(OrderId id, CancellationToken ct = default)
     {
-        return await _context.Orders.FindAsync([id], ct);
+        return await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id, ct);
     }
 
     public async Task<List<Order>> GetByCustomerIdAsync(CustomerId customerId, CancellationToken ct = default)
     {
         return await _context.Orders
+            .Include(o => o.Items)
             .Where(o => o.CustomerId == customerId)
             .OrderByDescending(o => o.PurchaseDate)
             .ToListAsync(ct);
@@ -29,6 +32,7 @@ public class OrderRepository : IOrderRepository
     public async Task<List<Order>> GetIncompleteOrdersAsync(CancellationToken ct = default)
     {
         return await _context.Orders
+            .Include(o => o.Items)
             .Where(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
             .OrderBy(o => o.PurchaseDate)
             .ToListAsync(ct);
