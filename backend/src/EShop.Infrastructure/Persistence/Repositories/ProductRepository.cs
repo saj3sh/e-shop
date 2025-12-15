@@ -45,25 +45,22 @@ public class ProductRepository : IProductRepository
         return (items, totalCount);
     }
 
-    public async Task AddAsync(Product product, CancellationToken ct = default)
+    public void Add(Product product)
     {
-        await _context.Products.AddAsync(product, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.Products.Add(product);
     }
 
-    public async Task AddRangeAsync(IEnumerable<Product> products, CancellationToken ct = default)
+    public void AddRange(IEnumerable<Product> products)
     {
-        await _context.Products.AddRangeAsync(products, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.Products.AddRange(products);
     }
 
-    public async Task UpdateAsync(Product product, CancellationToken ct = default)
+    public void Update(Product product)
     {
         _context.Products.Update(product);
-        await _context.SaveChangesAsync(ct);
 
-        // Invalidate cache after update
-        await _cacheInvalidator.InvalidateProductAsync(product.Id.Value, ct);
+        // Note: Cache invalidation will happen after UnitOfWork.SaveChanges
+        _cacheInvalidator.InvalidateProductAsync(product.Id.Value, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     public async Task<Product?> FindByNameAndPriceAsync(string name, decimal price, CancellationToken ct = default)
