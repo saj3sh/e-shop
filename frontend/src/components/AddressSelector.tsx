@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Address {
   id: string;
@@ -32,6 +33,7 @@ export const AddressSelector = ({
   defaultAddressId,
 }: AddressSelectorProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filteredAddresses = addresses.filter(
     (addr) =>
@@ -116,13 +118,7 @@ export const AddressSelector = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (
-                          window.confirm(
-                            "Are you sure you want to delete this address?"
-                          )
-                        ) {
-                          onDelete(address.id);
-                        }
+                        setDeleteConfirm(address.id);
                       }}
                       className="text-xs text-red-600 hover:text-red-700 underline"
                     >
@@ -143,6 +139,22 @@ export const AddressSelector = ({
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Delete Address"
+        message="Are you sure you want to delete this address? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteConfirm && onDelete) {
+            onDelete(deleteConfirm);
+            setDeleteConfirm(null);
+          }
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 };
