@@ -36,11 +36,19 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
+// unit of work and domain events
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+
 // repositories
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+
+// domain event handlers
+builder.Services.AddScoped<IDomainEventHandler<EShop.Domain.Orders.OrderPlaced>, EShop.Application.Orders.EventHandlers.OrderPlacedEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<EShop.Domain.Orders.OrderCompleted>, EShop.Application.Orders.EventHandlers.OrderCompletedEventHandler>();
 
 // caching
 builder.Services.AddMemoryCache();

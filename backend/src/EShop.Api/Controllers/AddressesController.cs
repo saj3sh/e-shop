@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EShop.Domain.Customers;
-using EShop.Infrastructure.Persistence;
+using EShop.Application.Common;
 
 namespace EShop.Api.Controllers;
 
@@ -10,11 +10,31 @@ namespace EShop.Api.Controllers;
 [Authorize]
 public class AddressesController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly ICustomerRepository _customerRepo;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AddressesController(AppDbContext context)
+    public AddressesController(ICustomerRepository customerRepo, IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _customerRepo = customerRepo;
+        _unitOfWork = unitOfWork;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetCustomerAddresses(CancellationToken ct)
+    {
+        var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+        if (customerIdClaim == null)
+            return Unauthorized();
+
+        var customer = await _customerRepo.GetByIdAsync(new CustomerId(Guid.Parse(customerIdClaim)), ct);
+        if (customer == null)
+            return NotFound("Customer not found");
+
+        return Ok(new
+        {
+            defaultShippingAddressId = customer.DefaultShippingAddressId,
+            defaultBillingAddressId = customer.DefaultBillingAddressId
+        });
     }
 
     [HttpPost]
@@ -29,8 +49,8 @@ public class AddressesController : ControllerBase
             null
         );
 
-        await _context.Addresses.AddAsync(address, ct);
-        await _context.SaveChangesAsync(ct);
+        _customerRepo.AddAddress(address);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         return Ok(new { id = address.Id });
     }
