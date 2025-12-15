@@ -6,6 +6,7 @@ import { handleLogout } from "../lib/apiClient";
 export const Layout = () => {
   const { isAuthenticated, role } = useAuthStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
+  const isAdmin = role === "Admin";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,42 +20,56 @@ export const Layout = () => {
               >
                 EShop
               </Link>
-              <Link
-                to="/"
-                className="flex items-center text-gray-700 hover:text-gray-900"
-              >
-                Products
-              </Link>
+              {!isAdmin && (
+                <Link
+                  to="/"
+                  className="flex items-center text-gray-700 hover:text-gray-900"
+                >
+                  Products
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center space-x-4">
-              <Link
-                to="/cart"
-                className="relative text-gray-700 hover:text-gray-900"
-              >
-                <span className="text-sm">Cart</span>
-                {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
+              {!isAdmin && (
+                <Link
+                  to="/cart"
+                  className="relative text-gray-700 hover:text-gray-900"
+                >
+                  <span className="text-sm">Cart</span>
+                  {totalItems > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </Link>
+              )}
 
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/user"
-                    className="text-gray-700 hover:text-gray-900"
-                  >
-                    Profile
-                  </Link>
-                  {role === "Admin" && (
+                  {!isAdmin && (
                     <Link
-                      to="/admin"
+                      to="/user"
                       className="text-gray-700 hover:text-gray-900"
                     >
-                      Admin
+                      Profile
                     </Link>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <Link
+                        to="/admin"
+                        className="text-gray-700 hover:text-gray-900"
+                      >
+                        Orders
+                      </Link>
+                      <Link
+                        to="/admin/activity-logs"
+                        className="text-gray-700 hover:text-gray-900"
+                      >
+                        Activity Logs
+                      </Link>
+                    </>
                   )}
                   <button
                     onClick={() => handleLogout()}

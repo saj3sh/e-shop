@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
 import { useCartStore } from "../stores/cartStore";
+import { useAuthStore } from "../stores/authStore";
 
 interface Product {
   id: string;
@@ -21,10 +22,16 @@ interface SearchResult {
 }
 
 export const HomePage = () => {
+  const { role } = useAuthStore();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const addItem = useCartStore((state) => state.addItem);
+
+  // Redirect admin users to admin dashboard
+  if (role === "Admin") {
+    return <Navigate to="/admin" replace />;
+  }
 
   const { data, isLoading } = useQuery<SearchResult>({
     queryKey: ["products", debouncedSearch, page],
