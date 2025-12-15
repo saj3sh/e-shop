@@ -1,23 +1,11 @@
 import { Outlet, Link } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useCartStore } from "../stores/cartStore";
-import { apiClient, setAccessToken } from "../lib/apiClient";
+import { handleLogout } from "../lib/apiClient";
 
 export const Layout = () => {
-  const { isAuthenticated, role, clearAuth } = useAuthStore();
+  const { isAuthenticated, role } = useAuthStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
-
-  const handleLogout = async () => {
-    try {
-      await apiClient.post("/auth/logout");
-    } catch (error) {
-      console.error("logout failed", error);
-    } finally {
-      setAccessToken(null);
-      clearAuth();
-      window.location.href = "/login";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,7 +57,7 @@ export const Layout = () => {
                     </Link>
                   )}
                   <button
-                    onClick={handleLogout}
+                    onClick={() => handleLogout()}
                     className="text-gray-700 hover:text-gray-900"
                   >
                     Logout

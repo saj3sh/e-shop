@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { apiClient, setAccessToken } from "../lib/apiClient";
+import { apiClient } from "../lib/apiClient";
 import { useAuthStore } from "../stores/authStore";
+import { useCartStore } from "../stores/cartStore";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +11,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const switchUser = useCartStore((state) => state.switchUser);
   const successMessage = (location.state as any)?.message;
   const from = (location.state as any)?.from?.pathname || "/";
 
@@ -22,8 +24,8 @@ export const LoginPage = () => {
       const response = await apiClient.post("/auth/login", { email });
       const { accessToken, role, userId } = response.data;
 
-      setAccessToken(accessToken);
-      setAuth(userId, role);
+      setAuth(userId, role, accessToken);
+      switchUser(userId);
 
       navigate(from, { replace: true });
     } catch (err: any) {

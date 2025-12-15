@@ -8,13 +8,20 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-let accessToken: string | null = null;
+export const handleLogout = async (callApi = true) => {
+  if (callApi) {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (error) {
+      console.error("logout api call failed", error);
+    }
+  }
 
-export const setAccessToken = (token: string | null) => {
-  accessToken = token;
+  const { useAuthStore } = await import("../stores/authStore");
+  useAuthStore.getState().clearAuth();
+
+  window.location.href = "/login";
 };
-
-export const getAccessToken = () => accessToken;
 
 // where 401 should not trigger token refresh retry
 const NO_RETRY_ENDPOINTS = [
@@ -23,12 +30,18 @@ const NO_RETRY_ENDPOINTS = [
 ];
 
 // request interceptor to add access token
-apiClient.interceptors.request.use((config) => {
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+apiClient.interceptors.request.use(async (config) => {
+  const { useAuthStore } = await import("../stores/authStore");
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// Token refresh queue to prevent multiple concurrent refresh requests
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
 
 // response interceptor to handle 401 and refresh token
 apiClient.interceptors.response.use(
@@ -50,20 +63,28 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const response = await axios.post(
-          `${API_BASE}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
+        // If already refreshing, wait for the existing refresh to complete
+        if (!isRefreshing) {
+          isRefreshing = true;
+          refreshPromise = axios
+            .post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true })
+            .then(async (response) => {
+              const newToken = response.data.accessToken;
+              const { useAuthStore } = await import("../stores/authStore");
+              useAuthStore.getState().setAccessToken(newToken);
+              return newToken;
+            })
+            .finally(() => {
+              isRefreshing = false;
+              refreshPromise = null;
+            });
+        }
 
-        const { accessToken: newToken } = response.data;
-        setAccessToken(newToken);
-
+        const newToken = await refreshPromise;
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        setAccessToken(null);
-        window.location.href = "/login";
+        await handleLogout(false);
         return Promise.reject(refreshError);
       }
     }
