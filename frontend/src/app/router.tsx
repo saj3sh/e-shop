@@ -22,7 +22,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Layout />,
+    element: (
+      <ProtectedRoute>
+        <Layout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -38,27 +42,15 @@ export const router = createBrowserRouter([
       },
       {
         path: "checkout",
-        element: (
-          <ProtectedRoute>
-            <CheckoutPage />
-          </ProtectedRoute>
-        ),
+        element: <CheckoutPage />,
       },
       {
         path: "user",
-        element: (
-          <ProtectedRoute>
-            <UserPage />
-          </ProtectedRoute>
-        ),
+        element: <UserPage />,
       },
       {
         path: "orders/:id",
-        element: (
-          <ProtectedRoute>
-            <OrderDetailsPage />
-          </ProtectedRoute>
-        ),
+        element: <OrderDetailsPage />,
       },
       {
         path: "admin",

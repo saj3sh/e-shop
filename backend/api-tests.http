@@ -35,11 +35,17 @@ Authorization: Bearer {{accessToken}}
   ],
   "shippingAddressId": "{{addressId}}",
   "billingAddressId": "{{addressId}}",
-  "shippingCountry": "US"
+  "shippingCountry": "US",
+  "cardNumber": "4532123456789012",
+  "cardType": "Visa"
 }
 
 ### get my orders
 GET {{api}}/orders/mine
+Authorization: Bearer {{accessToken}}
+
+### get order by id
+GET {{api}}/orders/{{orderId}}
 Authorization: Bearer {{accessToken}}
 
 ### get customer profile

@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
+import { CardIcon } from "../components/CardIcon";
 
 interface OrderItem {
   productId: string;
@@ -16,6 +17,7 @@ interface Order {
   purchaseDate: string;
   estimatedDelivery: string;
   total: number;
+  paymentCard?: string;
   items: OrderItem[];
 }
 
@@ -25,14 +27,8 @@ export const OrderDetailsPage = () => {
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: async (): Promise<Order> => {
-      // note: this would need a proper endpoint, for now using mine endpoint
-      const response = await apiClient.get("/orders/mine");
-      const orders = response.data as Order[];
-      const foundOrder = orders.find((o: Order) => o.id === id);
-      if (!foundOrder) {
-        throw new Error("order not found");
-      }
-      return foundOrder;
+      const response = await apiClient.get(`/orders/${id}`);
+      return response.data;
     },
   });
 
@@ -70,6 +66,15 @@ export const OrderDetailsPage = () => {
               {new Date(order.estimatedDelivery).toLocaleDateString()}
             </p>
           </div>
+          {order.paymentCard && (
+            <div>
+              <p className="text-sm text-gray-600">payment method</p>
+              <div className="flex items-center gap-2 mt-1">
+                <CardIcon type={order.paymentCard.split(" ")[0]} />
+                <span className="font-semibold">{order.paymentCard}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border-t pt-4">
