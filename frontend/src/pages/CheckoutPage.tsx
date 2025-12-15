@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../stores/cartStore";
 import { apiClient } from "../lib/apiClient";
+import { CardIcon } from "../components/CardIcon";
 
 export const CheckoutPage = () => {
   const { items, clearCart, getTotalPrice } = useCartStore();
@@ -12,6 +13,8 @@ export const CheckoutPage = () => {
   const [shippingAddress, setShippingAddress] = useState("");
   const [shippingCity, setShippingCity] = useState("");
   const [shippingCountry, setShippingCountry] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardType, setCardType] = useState("Visa");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +40,8 @@ export const CheckoutPage = () => {
         shippingAddressId: addressId,
         billingAddressId: addressId,
         shippingCountry,
+        cardNumber,
+        cardType,
       });
 
       clearCart();
@@ -112,6 +117,41 @@ export const CheckoutPage = () => {
             required
             className="w-full px-4 py-2 border rounded-md"
           />
+        </div>
+
+        <h2 className="text-xl font-bold mb-4 mt-6">payment information</h2>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">card number</label>
+          <input
+            type="text"
+            value={cardNumber}
+            onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, ""))}
+            placeholder="1234567812345678"
+            maxLength={16}
+            className="w-full px-4 py-2 border rounded-md"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">card type</label>
+          <div className="grid grid-cols-4 gap-3">
+            {["Visa", "Mastercard", "Amex", "Discover"].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setCardType(type)}
+                className={`flex flex-col items-center justify-center p-3 border-2 rounded-lg transition-all ${
+                  cardType === type
+                    ? "border-blue-600 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <CardIcon type={type} />
+                <span className="text-xs mt-1 font-medium">{type}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {error && (
