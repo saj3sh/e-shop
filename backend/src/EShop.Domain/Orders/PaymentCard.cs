@@ -1,4 +1,4 @@
-namespace EShop.Domain.Common;
+namespace EShop.Domain.Orders;
 
 /// <summary>
 /// Represents a masked payment card for secure storage and display.

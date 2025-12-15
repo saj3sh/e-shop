@@ -5,15 +5,16 @@ namespace EShop.Domain.Orders;
 /// </summary>
 public class Order : Common.AggregateRoot
 {
-    public OrderId Id { get; private set; }
-    public Customers.CustomerId CustomerId { get; private set; }
+    public OrderId Id { get; private set; } = null!;
+    public Customers.CustomerId CustomerId { get; private set; } = null!;
     public OrderStatus Status { get; private set; }
-    public TrackingNumber TrackingNumber { get; private set; }
+    public TrackingNumber TrackingNumber { get; private set; } = null!;
     public DateTime PurchaseDate { get; private set; }
     public DateTime? EstimatedDelivery { get; private set; }
     public Guid ShippingAddressId { get; private set; }
     public Guid BillingAddressId { get; private set; }
-    public Products.Money Total { get; private set; }
+    public PaymentCard? PaymentCard { get; private set; }
+    public Products.Money Total { get; private set; } = null!;
 
     private readonly List<OrderItem> _items = new();
     public IReadOnlyList<OrderItem> Items => _items.AsReadOnly();
@@ -27,6 +28,7 @@ public class Order : Common.AggregateRoot
         Guid shippingAddressId,
         Guid billingAddressId,
         DateTime purchaseDate,
+        PaymentCard? paymentCard = null,
         DateTime? estimatedDelivery = null)
     {
         Id = id;
@@ -36,6 +38,7 @@ public class Order : Common.AggregateRoot
         ShippingAddressId = shippingAddressId;
         BillingAddressId = billingAddressId;
         PurchaseDate = purchaseDate;
+        PaymentCard = paymentCard;
         EstimatedDelivery = estimatedDelivery ?? purchaseDate.AddDays(7);
         Total = Products.Money.Create(0);
 
