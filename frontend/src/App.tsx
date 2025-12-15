@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./app/router";
 import { useAuthStore } from "./stores/authStore";
 import { useCartStore } from "./stores/cartStore";
+import { ToastProvider } from "./components/ToastProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ToastProvider />
       <RouterProvider router={router} />
     </QueryClientProvider>
   );
