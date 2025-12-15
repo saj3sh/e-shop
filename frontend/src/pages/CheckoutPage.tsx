@@ -10,9 +10,6 @@ export const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [shippingCity, setShippingCity] = useState("");
-  const [shippingCountry, setShippingCountry] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardType, setCardType] = useState("Visa");
 
@@ -22,24 +19,11 @@ export const CheckoutPage = () => {
     setLoading(true);
 
     try {
-      // create temp address
-      const addressResponse = await apiClient.post("/addresses", {
-        line1: shippingAddress,
-        city: shippingCity,
-        country: shippingCountry,
-        type: "Both",
-      });
-
-      const addressId = addressResponse.data.id;
-
       const response = await apiClient.post("/orders", {
         items: items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
         })),
-        shippingAddressId: addressId,
-        billingAddressId: addressId,
-        shippingCountry,
         cardNumber,
         cardType,
       });
@@ -81,45 +65,7 @@ export const CheckoutPage = () => {
         onSubmit={handleSubmit}
         className="bg-white rounded-lg shadow-md p-6 space-y-4"
       >
-        <h2 className="text-xl font-bold mb-4">shipping information</h2>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">address</label>
-          <input
-            type="text"
-            value={shippingAddress}
-            onChange={(e) => setShippingAddress(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">city</label>
-          <input
-            type="text"
-            value={shippingCity}
-            onChange={(e) => setShippingCity(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            country (2-letter code)
-          </label>
-          <input
-            type="text"
-            value={shippingCountry}
-            onChange={(e) => setShippingCountry(e.target.value.toUpperCase())}
-            maxLength={2}
-            required
-            className="w-full px-4 py-2 border rounded-md"
-          />
-        </div>
-
-        <h2 className="text-xl font-bold mb-4 mt-6">payment information</h2>
+        <h2 className="text-xl font-bold mb-4">payment information</h2>
 
         <div>
           <label className="block text-sm font-medium mb-1">card number</label>
