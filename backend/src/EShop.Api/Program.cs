@@ -9,13 +9,17 @@ using EShop.Infrastructure.Persistence.Repositories;
 using EShop.Infrastructure.Security;
 using EShop.Infrastructure.Caching;
 using EShop.Domain.Customers;
+using EShop.Domain.Addresses;
 using EShop.Domain.Products;
 using EShop.Domain.Orders;
 using EShop.Domain.Auth;
+using EShop.Domain.Common;
 using EShop.Application.Auth;
 using EShop.Application.Products;
 using EShop.Application.Orders;
 using EShop.Application.Customers;
+using EShop.Application.Addresses;
+using EShop.Application.ActivityLogs;
 using EShop.Application.Common;
 using EShop.Infrastructure.Services;
 
@@ -42,13 +46,17 @@ builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
 // repositories
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 
 // domain event handlers
-builder.Services.AddScoped<IDomainEventHandler<EShop.Domain.Orders.OrderPlaced>, EShop.Application.Orders.EventHandlers.OrderPlacedEventHandler>();
-builder.Services.AddScoped<IDomainEventHandler<EShop.Domain.Orders.OrderCompleted>, EShop.Application.Orders.EventHandlers.OrderCompletedEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<OrderPlaced>, EShop.Application.Orders.EventHandlers.OrderPlacedEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<OrderStatusChanged>, EShop.Application.Orders.EventHandlers.OrderStatusChangedEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<UserLoggedIn>, EShop.Application.Auth.EventHandlers.UserLoggedInEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<UserLoggedOut>, EShop.Application.Auth.EventHandlers.UserLoggedOutEventHandler>();
 
 // caching
 builder.Services.AddMemoryCache();
@@ -95,10 +103,15 @@ builder.Services.AddScoped<GetProductByIdQueryHandler>();
 builder.Services.AddScoped<CheckoutOrderCommandHandler>();
 builder.Services.AddScoped<GetCustomerOrdersQueryHandler>();
 builder.Services.AddScoped<GetOrderByIdQueryHandler>();
-builder.Services.AddScoped<GetIncompleteOrdersQueryHandler>();
-builder.Services.AddScoped<CompleteOrderCommandHandler>();
+builder.Services.AddScoped<GetOrdersQueryHandler>();
+builder.Services.AddScoped<UpdateOrderStatusCommandHandler>();
 builder.Services.AddScoped<GetCustomerByIdQueryHandler>();
 builder.Services.AddScoped<UpdateCustomerCommandHandler>();
+builder.Services.AddScoped<GetCustomerAddressesQueryHandler>();
+builder.Services.AddScoped<CreateAddressCommandHandler>();
+builder.Services.AddScoped<SetDefaultAddressCommandHandler>();
+builder.Services.AddScoped<DeleteAddressCommandHandler>();
+builder.Services.AddScoped<GetActivityLogsQueryHandler>();
 
 // data import on startup
 builder.Services.AddHostedService<DataImportHostedService>();

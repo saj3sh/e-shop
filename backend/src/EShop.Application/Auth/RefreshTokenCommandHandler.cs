@@ -21,38 +21,49 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, R
 
     public async Task<Result<RefreshTokenResult>> HandleAsync(RefreshTokenCommand command, CancellationToken ct = default)
     {
-        var user = await _userAccountRepo.GetByRefreshTokenAsync(command.RefreshToken, ct);
+        try
+        {
+            var user = await _userAccountRepo.GetByRefreshTokenAsync(command.RefreshToken, ct);
 
-        if (user == null)
-            return Result<RefreshTokenResult>.Failure("Invalid refresh token");
+            if (user == null)
+                return Result<RefreshTokenResult>.Failure("Invalid refresh token");
 
-        var existingToken = user.RefreshTokens.FirstOrDefault(t => t.Token == command.RefreshToken);
+            var existingToken = user.RefreshTokens.FirstOrDefault(t => t.Token == command.RefreshToken);
 
-        if (existingToken == null || !existingToken.IsValid())
-            return Result<RefreshTokenResult>.Failure("Refresh token expired or revoked");
+            if (existingToken == null || !existingToken.IsValid())
+                return Result<RefreshTokenResult>.Failure("Refresh token expired or revoked");
 
-        // revoke old token
-        user.RevokeRefreshToken(command.RefreshToken);
+            await _unitOfWork.BeginTransactionAsync(ct);
 
-        // generate new tokens
-        var newAccessToken = _jwtService.GenerateAccessToken(user);
-        var newRefreshToken = _jwtService.GenerateRefreshToken();
+            // revoke old token
+            user.RevokeRefreshToken(command.RefreshToken);
 
-        var refreshTokenEntity = new RefreshToken(
-            Guid.NewGuid(),
-            user.Id,
-            newRefreshToken,
-            DateTime.UtcNow.AddDays(7),
-            DateTime.UtcNow
-        );
-        _userAccountRepo.AddRefreshToken(refreshTokenEntity);
-        _userAccountRepo.Update(user);
+            // generate new tokens
+            var newAccessToken = _jwtService.GenerateAccessToken(user);
+            var newRefreshToken = _jwtService.GenerateRefreshToken();
 
-        await _unitOfWork.SaveChangesAsync(ct);
+            var refreshTokenEntity = new RefreshToken(
+                Guid.NewGuid(),
+                user.Id,
+                newRefreshToken,
+                DateTime.UtcNow.AddDays(7),
+                DateTime.UtcNow
+            );
+            _userAccountRepo.AddRefreshToken(refreshTokenEntity);
+            _userAccountRepo.Update(user);
 
-        return Result<RefreshTokenResult>.Success(new RefreshTokenResult(
-            newAccessToken,
-            newRefreshToken
-        ));
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
+
+            return Result<RefreshTokenResult>.Success(new RefreshTokenResult(
+                newAccessToken,
+                newRefreshToken
+            ));
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackTransactionAsync(ct);
+            return Result<RefreshTokenResult>.Failure($"token refresh failed: {ex.Message}");
+        }
     }
 }

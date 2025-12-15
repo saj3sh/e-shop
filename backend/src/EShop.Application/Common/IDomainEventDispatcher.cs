@@ -1,8 +1,5 @@
 namespace EShop.Application.Common;
 
-/// <summary>
-/// Domain event dispatcher for publishing events to handlers
-/// </summary>
 public interface IDomainEventDispatcher
 {
     Task DispatchAsync(Domain.Common.IDomainEvent domainEvent, CancellationToken cancellationToken = default);

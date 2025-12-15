@@ -1,6 +1,7 @@
 using EShop.Domain.Auth;
 using EShop.Domain.Customers;
 using EShop.Application.Common;
+using EShop.Domain.Addresses;
 
 namespace EShop.Application.Auth;
 
@@ -8,15 +9,18 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, Result<Re
 {
     private readonly IUserAccountRepository _userAccountRepo;
     private readonly ICustomerRepository _customerRepo;
+    private readonly IAddressRepository _addressRepo;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegisterCommandHandler(
         IUserAccountRepository userAccountRepo,
         ICustomerRepository customerRepo,
+        IAddressRepository addressRepo,
         IUnitOfWork unitOfWork)
     {
         _userAccountRepo = userAccountRepo;
         _customerRepo = customerRepo;
+        _addressRepo = addressRepo;
         _unitOfWork = unitOfWork;
     }
 
@@ -56,7 +60,7 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, Result<Re
                 AddressType.Shipping,
                 customer.Id.Value
             );
-            _customerRepo.AddAddress(shippingAddress);
+            _addressRepo.Add(shippingAddress);
 
             // create billing address (if different from shipping)
             Address billingAddress;
@@ -78,7 +82,7 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, Result<Re
                     AddressType.Billing,
                     customer.Id.Value
                 );
-                _customerRepo.AddAddress(billingAddress);
+                _addressRepo.Add(billingAddress);
             }
 
             // set default addresses
