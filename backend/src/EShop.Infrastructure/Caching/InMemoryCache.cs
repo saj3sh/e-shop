@@ -1,45 +1,79 @@
 using System.Collections.Concurrent;
-using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
+using EShop.Application.Common;
 
 namespace EShop.Infrastructure.Caching;
 
 /// <summary>
-/// in-process memory cache, no external dependencies
+/// memory cache implementation with IMemoryCache
 /// </summary>
-public class InMemoryCache : ICache
+public class MemoryCacheAdapter : ICache
 {
-    private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
+    private readonly IMemoryCache _cache;
+
+    // track keys so we can delete by prefix (IMemoryCache doesn't expose its keys)
+    private readonly ConcurrentDictionary<string, byte> _keyTracker = new();
+
+    public MemoryCacheAdapter(IMemoryCache cache)
+    {
+        _cache = cache;
+    }
 
     public Task<T?> GetAsync<T>(string key, CancellationToken ct = default) where T : class
     {
-        if (_cache.TryGetValue(key, out var entry))
-        {
-            if (entry.ExpiresAt == null || entry.ExpiresAt > DateTime.UtcNow)
-            {
-                return Task.FromResult(JsonSerializer.Deserialize<T>(entry.Value));
-            }
+        var result = _cache.Get<T>(key);
+        return Task.FromResult(result);
+    }
 
-            _cache.TryRemove(key, out _);
-        }
-
-        return Task.FromResult<T?>(null);
+    public Task<bool> TryGetAsync<T>(string key, out T? value, CancellationToken ct = default) where T : class
+    {
+        var found = _cache.TryGetValue<T>(key, out value);
+        return Task.FromResult(found);
     }
 
     public Task SetAsync<T>(string key, T value, TimeSpan? expiration = null, CancellationToken ct = default) where T : class
     {
-        var json = JsonSerializer.Serialize(value);
-        var expiresAt = expiration.HasValue ? (DateTime?)DateTime.UtcNow.Add(expiration.Value) : null;
+        var options = new MemoryCacheEntryOptions();
 
-        _cache[key] = new CacheEntry(json, expiresAt);
+        if (expiration.HasValue)
+        {
+            options.SetAbsoluteExpiration(expiration.Value);
+        }
+        else
+        {
+            options.SetSlidingExpiration(TimeSpan.FromMinutes(10));
+        }
 
+        // registering cleanup callback to remove from tracker when evicted
+        options.RegisterPostEvictionCallback((k, v, r, s) =>
+        {
+            _keyTracker.TryRemove(k.ToString()!, out _);
+        });
+
+        _cache.Set(key, value, options);
+        _keyTracker.TryAdd(key, 0);
         return Task.CompletedTask;
     }
 
     public Task RemoveAsync(string key, CancellationToken ct = default)
     {
-        _cache.TryRemove(key, out _);
+        _cache.Remove(key);
+        _keyTracker.TryRemove(key, out _);
         return Task.CompletedTask;
     }
 
-    private record CacheEntry(string Value, DateTime? ExpiresAt);
+    public Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
+    {
+        var keysToRemove = _keyTracker.Keys
+            .Where(k => k.StartsWith(prefix, StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var key in keysToRemove)
+        {
+            _cache.Remove(key);
+            _keyTracker.TryRemove(key, out _);
+        }
+
+        return Task.CompletedTask;
+    }
 }
