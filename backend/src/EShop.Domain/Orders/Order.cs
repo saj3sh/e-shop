@@ -51,13 +51,19 @@ public class Order : Common.AggregateRoot
         RecalculateTotal();
     }
 
-    public void MarkAsCompleted()
+    public void UpdateStatus(OrderStatus newStatus)
     {
-        if (Status == OrderStatus.Completed)
+        if (Status == newStatus)
             return;
 
-        Status = OrderStatus.Completed;
-        RaiseDomainEvent(new OrderCompleted(Id, DateTime.UtcNow));
+        var oldStatus = Status;
+        Status = newStatus;
+        RaiseDomainEvent(new OrderStatusChanged(Id, oldStatus, newStatus, DateTime.UtcNow));
+    }
+
+    public void MarkAsCompleted()
+    {
+        UpdateStatus(OrderStatus.Completed);
     }
 
     private void RecalculateTotal()
