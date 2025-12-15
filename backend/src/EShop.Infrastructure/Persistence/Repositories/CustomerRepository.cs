@@ -22,21 +22,18 @@ public class CustomerRepository : ICustomerRepository
         return await _context.Addresses.FindAsync([addressId], ct);
     }
 
-    public async Task AddAsync(Customer customer, CancellationToken ct = default)
+    public void Add(Customer customer)
     {
-        await _context.Customers.AddAsync(customer, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.Customers.Add(customer);
     }
 
-    public async Task AddAddressAsync(Address address, CancellationToken ct = default)
+    public void AddAddress(Address address)
     {
-        await _context.Addresses.AddAsync(address, ct);
-        await _context.SaveChangesAsync(ct);
+        _context.Addresses.Add(address);
     }
 
-    public async Task UpdateAsync(Customer customer, CancellationToken ct = default)
+    public void Update(Customer customer)
     {
         _context.Customers.Update(customer);
-        await _context.SaveChangesAsync(ct);
     }
 }

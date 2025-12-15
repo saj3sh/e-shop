@@ -8,10 +8,12 @@ public record UpdateCustomerCommand(Guid Id, string FirstName, string LastName, 
 public class UpdateCustomerCommandHandler : ICommandHandler<UpdateCustomerCommand, Result>
 {
     private readonly ICustomerRepository _customerRepo;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateCustomerCommandHandler(ICustomerRepository customerRepo)
+    public UpdateCustomerCommandHandler(ICustomerRepository customerRepo, IUnitOfWork unitOfWork)
     {
         _customerRepo = customerRepo;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> HandleAsync(UpdateCustomerCommand command, CancellationToken ct = default)
@@ -26,7 +28,8 @@ public class UpdateCustomerCommandHandler : ICommandHandler<UpdateCustomerComman
             var phone = Phone.Create(command.Phone);
             customer.UpdateProfile(command.FirstName, command.LastName, phone);
 
-            await _customerRepo.UpdateAsync(customer, ct);
+            _customerRepo.Update(customer);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Success();
         }
