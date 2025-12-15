@@ -511,34 +511,3 @@ dotnet test
 cd frontend
 npm test
 ```
-
-## Support & Contact
-
-For any questions or issues regarding this submission, please contact via the assessment email thread.
-
----
-
-## Submission Checklist
-
-✅ Source code for backend (C# ASP.NET Core)
-✅ Source code for frontend (React with TypeScript)
-✅ SQLite database auto-initialization
-✅ Excel dataset included
-✅ All dependencies included via package manifests
-✅ README with setup instructions
-✅ Solution runs on Windows without internet
-✅ All required features implemented:
-
-- Email-only login & registration
-- Product browsing with search (25 per page)
-- Shopping cart functionality
-- Order placement with tracking numbers
-- User profile and order history
-- Admin order management
-
----
-
-**Project Completed**: December 15, 2025
-**Submission Deadline**: Monday, December 15, 2025, 4:00 PM Mountain Time
-
-Thank you for reviewing this submission!
