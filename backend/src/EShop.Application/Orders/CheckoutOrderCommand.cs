@@ -28,7 +28,7 @@ public record OrderDto(
     List<OrderItemDetailDto> Items
 )
 {
-    public static explicit operator OrderDto(Order o) => new(
+    public static OrderDto FromOrder(Order o, Dictionary<Guid, string> productNames) => new(
         o.Id.Value,
         o.CustomerId.Value,
         o.Status.ToString(),
@@ -37,19 +37,17 @@ public record OrderDto(
         o.EstimatedDelivery,
         o.Total.Amount,
         o.PaymentCard?.ToString(),
-        [.. o.Items.Select(i => (OrderItemDetailDto)i)]
+        o.Items.Select(i => new OrderItemDetailDto(
+            i.ProductId.Value,
+            productNames.GetValueOrDefault(i.ProductId.Value, "Unknown Product"),
+            i.Quantity,
+            i.UnitPrice.Amount,
+            i.TotalPrice.Amount
+        )).ToList()
     );
 }
 
-public record OrderItemDetailDto(Guid ProductId, int Quantity, decimal UnitPrice, decimal TotalPrice)
-{
-    public static explicit operator OrderItemDetailDto(OrderItem oi) => new(
-        oi.ProductId.Value,
-        oi.Quantity,
-        oi.UnitPrice.Amount,
-        oi.TotalPrice.Amount
-    );
-}
+public record OrderItemDetailDto(Guid ProductId, string ProductName, int Quantity, decimal UnitPrice, decimal TotalPrice);
 
 public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand, Result<OrderDto>>
 {
@@ -133,7 +131,12 @@ public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand,
             await _unitOfWork.SaveChangesAsync(ct);
             await _unitOfWork.CommitTransactionAsync(ct);
 
-            return Result<OrderDto>.Success((OrderDto)order);
+            // Build product names dictionary for DTO
+            var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _productRepo.GetByIdsAsync(productIds, ct);
+            var productNames = products.ToDictionary(p => p.Id.Value, p => p.Name);
+
+            return Result<OrderDto>.Success(OrderDto.FromOrder(order, productNames));
         }
         catch (Exception ex)
         {
