@@ -25,12 +25,12 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, R
         var user = await _userAccountRepo.GetByRefreshTokenAsync(command.RefreshToken, ct);
 
         if (user == null)
-            return Result<RefreshTokenResult>.Failure("invalid refresh token");
+            return Result<RefreshTokenResult>.Failure("Invalid refresh token");
 
         var existingToken = user.RefreshTokens.FirstOrDefault(t => t.Token == command.RefreshToken);
 
         if (existingToken == null || !existingToken.IsValid())
-            return Result<RefreshTokenResult>.Failure("refresh token expired or revoked");
+            return Result<RefreshTokenResult>.Failure("Refresh token expired or revoked");
 
         // revoke old token
         user.RevokeRefreshToken(command.RefreshToken);
@@ -39,7 +39,14 @@ public class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, R
         var newAccessToken = _jwtService.GenerateAccessToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken();
 
-        user.AddRefreshToken(newRefreshToken, DateTime.UtcNow.AddDays(7));
+        var refreshTokenEntity = new RefreshToken(
+            Guid.NewGuid(),
+            user.Id,
+            newRefreshToken,
+            DateTime.UtcNow.AddDays(7),
+            DateTime.UtcNow
+        );
+        await _userAccountRepo.AddRefreshTokenAsync(refreshTokenEntity, ct);
         await _userAccountRepo.UpdateAsync(user, ct);
 
         return Result<RefreshTokenResult>.Success(new RefreshTokenResult(

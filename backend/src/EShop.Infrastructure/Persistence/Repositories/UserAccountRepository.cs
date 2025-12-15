@@ -15,15 +15,19 @@ public class UserAccountRepository : IUserAccountRepository
 
     public async Task<UserAccount?> GetByIdAsync(UserAccountId id, CancellationToken ct = default)
     {
-        return await _context.UserAccounts.FindAsync(new object[] { id }, ct);
+        return await _context.UserAccounts.FindAsync([id], ct);
     }
 
     public async Task<UserAccount?> GetByEmailAsync(Email email, CancellationToken ct = default)
     {
-        // Use AsNoTracking to avoid entity tracking issues
         return await _context.UserAccounts
-            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email == email, ct);
+    }
+
+    public async Task<UserAccount?> GetByCustomerIdAsync(CustomerId customerId, CancellationToken ct = default)
+    {
+        return await _context.UserAccounts
+            .FirstOrDefaultAsync(u => u.CustomerId == customerId, ct);
     }
 
     public async Task<UserAccount?> GetByRefreshTokenAsync(string token, CancellationToken ct = default)
@@ -34,7 +38,6 @@ public class UserAccountRepository : IUserAccountRepository
         if (refreshToken == null)
             return null;
 
-        // Load user with refresh tokens for token refresh operation
         return await _context.UserAccounts
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Id == refreshToken.UserAccountId, ct);
@@ -48,13 +51,7 @@ public class UserAccountRepository : IUserAccountRepository
 
     public async Task UpdateAsync(UserAccount account, CancellationToken ct = default)
     {
-        // Attach the untracked entity and mark only specific properties as modified
-        var entry = _context.Entry(account);
-        if (entry.State == EntityState.Detached)
-        {
-            _context.UserAccounts.Attach(account);
-            entry.Property(u => u.LastLoginAt).IsModified = true;
-        }
+        // EF Core auto-detects changes. so just save
         await _context.SaveChangesAsync(ct);
     }
 

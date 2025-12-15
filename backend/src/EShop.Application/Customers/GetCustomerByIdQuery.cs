@@ -1,4 +1,5 @@
 using EShop.Domain.Customers;
+using EShop.Domain.Auth;
 using EShop.Application.Common;
 
 namespace EShop.Application.Customers;
@@ -13,26 +14,17 @@ public record CustomerDto(
     string Phone,
     Guid? DefaultShippingAddressId,
     Guid? DefaultBillingAddressId
-)
-{
-    public static explicit operator CustomerDto(Customer c) => new(
-        c.Id.Value,
-        c.FirstName,
-        c.LastName,
-        c.Email.Value,
-        c.Phone.Value,
-        c.DefaultShippingAddressId,
-        c.DefaultBillingAddressId
-    );
-}
+);
 
 public class GetCustomerByIdQueryHandler : IQueryHandler<GetCustomerByIdQuery, Result<CustomerDto?>>
 {
     private readonly ICustomerRepository _customerRepo;
+    private readonly IUserAccountRepository _userAccountRepo;
 
-    public GetCustomerByIdQueryHandler(ICustomerRepository customerRepo)
+    public GetCustomerByIdQueryHandler(ICustomerRepository customerRepo, IUserAccountRepository userAccountRepo)
     {
         _customerRepo = customerRepo;
+        _userAccountRepo = userAccountRepo;
     }
 
     public async Task<Result<CustomerDto?>> HandleAsync(GetCustomerByIdQuery query, CancellationToken ct = default)
@@ -42,6 +34,20 @@ public class GetCustomerByIdQueryHandler : IQueryHandler<GetCustomerByIdQuery, R
         if (customer == null)
             return Result<CustomerDto?>.Failure("customer not found");
 
-        return Result<CustomerDto?>.Success((CustomerDto)customer);
+        // Get email from UserAccount
+        var userAccount = await _userAccountRepo.GetByCustomerIdAsync(customer.Id, ct);
+        var email = userAccount?.Email.Value ?? string.Empty;
+
+        var dto = new CustomerDto(
+            customer.Id.Value,
+            customer.FirstName,
+            customer.LastName,
+            email,
+            customer.Phone.Value,
+            customer.DefaultShippingAddressId,
+            customer.DefaultBillingAddressId
+        );
+
+        return Result<CustomerDto?>.Success(dto);
     }
 }

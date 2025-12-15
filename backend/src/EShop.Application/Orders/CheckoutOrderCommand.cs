@@ -10,7 +10,9 @@ public record CheckoutOrderCommand(
     List<OrderItemDto> Items,
     Guid ShippingAddressId,
     Guid BillingAddressId,
-    string ShippingCountry
+    string ShippingCountry,
+    string? CardNumber = null,
+    string? CardType = null
 ) : ICommand<Result<OrderDto>>;
 
 public record OrderItemDto(Guid ProductId, int Quantity);
@@ -23,6 +25,7 @@ public record OrderDto(
     DateTime PurchaseDate,
     DateTime? EstimatedDelivery,
     decimal Total,
+    string? PaymentCard,
     List<OrderItemDetailDto> Items
 )
 {
@@ -34,7 +37,8 @@ public record OrderDto(
         o.PurchaseDate,
         o.EstimatedDelivery,
         o.Total.Amount,
-        o.Items.Select(i => (OrderItemDetailDto)i).ToList()
+        o.PaymentCard?.ToString(),
+        [.. o.Items.Select(i => (OrderItemDetailDto)i)]
     );
 }
 
@@ -69,10 +73,11 @@ public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand,
         try
         {
             if (command.Items.Count == 0)
-                return Result<OrderDto>.Failure("cart is empty");
+                return Result<OrderDto>.Failure("Cart is empty");
 
             var customerId = new CustomerId(command.CustomerId);
             var trackingNumber = TrackingNumber.Generate(command.ShippingCountry);
+            var paymentCard = PaymentCard.CreateMasked(command.CardNumber, command.CardType);
 
             var order = new Order(
                 OrderId.New(),
@@ -80,7 +85,8 @@ public class CheckoutOrderCommandHandler : ICommandHandler<CheckoutOrderCommand,
                 trackingNumber,
                 command.ShippingAddressId,
                 command.BillingAddressId,
-                DateTime.UtcNow
+                DateTime.UtcNow,
+                paymentCard
             );
 
             foreach (var item in command.Items)

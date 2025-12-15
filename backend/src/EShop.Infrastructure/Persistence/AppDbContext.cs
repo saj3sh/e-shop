@@ -18,7 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    public DbSet<CsvImportRecord> CsvImports => Set<CsvImportRecord>();
+    public DbSet<DataImportRecord> CsvImports => Set<DataImportRecord>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -34,11 +34,6 @@ public class AppDbContext : DbContext
             entity.HasKey(c => c.Id);
             entity.Property(c => c.Id)
                 .HasConversion(id => id.Value, value => new CustomerId(value));
-
-            entity.Property(c => c.Email)
-                .HasConversion(email => email.Value, value => Email.Create(value))
-                .HasMaxLength(256);
-            entity.HasIndex(c => c.Email).IsUnique();
 
             entity.Property(c => c.Phone)
                 .HasConversion(phone => phone.Value, value => Phone.Create(value))
@@ -111,6 +106,17 @@ public class AppDbContext : DbContext
                     value => Money.Create(value, "USD"))
                 .HasPrecision(18, 2);
 
+            entity.OwnsOne(o => o.PaymentCard, card =>
+            {
+                card.Property(c => c.MaskedValue)
+                    .HasColumnName("PaymentCardMaskedValue")
+                    .HasMaxLength(20);
+
+                card.Property(c => c.CardType)
+                    .HasColumnName("PaymentCardType")
+                    .HasMaxLength(50);
+            });
+
             entity.Ignore(o => o.DomainEvents);
         });
 
@@ -178,8 +184,8 @@ public class AppDbContext : DbContext
             entity.HasIndex(t => t.Token);
         });
 
-        // csv imports
-        modelBuilder.Entity<CsvImportRecord>(entity =>
+        // dataset import
+        modelBuilder.Entity<DataImportRecord>(entity =>
         {
             entity.HasKey(i => i.Id);
             entity.Property(i => i.Checksum).HasMaxLength(64);
@@ -187,10 +193,7 @@ public class AppDbContext : DbContext
     }
 }
 
-/// <summary>
-/// tracks csv imports to make them idempotent
-/// </summary>
-public class CsvImportRecord
+public class DataImportRecord
 {
     public Guid Id { get; set; }
     public string Checksum { get; set; } = string.Empty;

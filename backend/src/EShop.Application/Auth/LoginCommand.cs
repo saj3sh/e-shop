@@ -43,7 +43,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, Result<LoginRes
             var accessToken = _jwtService.GenerateAccessToken(user);
             var refreshToken = _jwtService.GenerateRefreshToken();
 
-            // Create refresh token directly without adding to user's collection
+            // store refresh token to DB. better to store in redis in prod.
             var refreshTokenEntity = new RefreshToken(
                 Guid.NewGuid(),
                 user.Id,

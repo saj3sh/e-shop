@@ -52,7 +52,6 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, Result<Re
                 CustomerId.New(),
                 command.FirstName,
                 command.LastName,
-                email,
                 phone
             );
             await _customerRepo.AddAsync(customer, ct);

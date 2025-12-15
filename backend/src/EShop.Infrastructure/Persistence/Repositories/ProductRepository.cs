@@ -1,20 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using EShop.Domain.Products;
+using EShop.Application.Common;
 
 namespace EShop.Infrastructure.Persistence.Repositories;
 
 public class ProductRepository : IProductRepository
 {
     private readonly AppDbContext _context;
+    private readonly ICacheInvalidator _cacheInvalidator;
 
-    public ProductRepository(AppDbContext context)
+    public ProductRepository(AppDbContext context, ICacheInvalidator cacheInvalidator)
     {
         _context = context;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     public async Task<Product?> GetByIdAsync(ProductId id, CancellationToken ct = default)
     {
-        return await _context.Products.FindAsync(new object[] { id }, ct);
+        return await _context.Products.FindAsync([id], ct);
     }
 
     public async Task<(List<Product> Items, int TotalCount)> SearchAsync(
@@ -58,6 +61,9 @@ public class ProductRepository : IProductRepository
     {
         _context.Products.Update(product);
         await _context.SaveChangesAsync(ct);
+
+        // Invalidate cache after update
+        await _cacheInvalidator.InvalidateProductAsync(product.Id.Value, ct);
     }
 
     public async Task<Product?> FindByNameAndPriceAsync(string name, decimal price, CancellationToken ct = default)

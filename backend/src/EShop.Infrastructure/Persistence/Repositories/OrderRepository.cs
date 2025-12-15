@@ -15,7 +15,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetByIdAsync(OrderId id, CancellationToken ct = default)
     {
-        return await _context.Orders.FindAsync(new object[] { id }, ct);
+        return await _context.Orders.FindAsync([id], ct);
     }
 
     public async Task<List<Order>> GetByCustomerIdAsync(CustomerId customerId, CancellationToken ct = default)
