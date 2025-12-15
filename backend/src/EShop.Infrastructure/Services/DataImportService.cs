@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using EShop.Domain.Auth;
-using EShop.Domain.Common;
 using EShop.Domain.Customers;
 using EShop.Domain.Orders;
 using EShop.Domain.Products;
@@ -85,7 +84,7 @@ public sealed class DataImportService
 
     private async Task RecordImportAsync(string checksum, CancellationToken ct)
     {
-        _context.CsvImports.Add(new CsvImportRecord
+        _context.CsvImports.Add(new DataImportRecord
         {
             Id = Guid.NewGuid(),
             Checksum = checksum,
@@ -95,7 +94,7 @@ public sealed class DataImportService
         await _context.SaveChangesAsync(ct);
     }
 
-    private async Task<string> ComputeChecksumAsync(string filePath)
+    private static async Task<string> ComputeChecksumAsync(string filePath)
     {
         using var stream = File.OpenRead(filePath);
         var hash = await SHA256.HashDataAsync(stream);
@@ -107,9 +106,9 @@ public sealed class DataImportService
         var records = await ReadExcelRecordsAsync(excelPath);
         _logger.LogInformation("Found {Count} records to import", records.Count);
 
-        var (customers, addresses, products, orders) = TransformRecords(records);
+        var (customers, addresses, products, orders, userAccounts) = TransformRecords(records);
 
-        await PersistEntitiesAsync(customers, addresses, products, orders, ct);
+        await PersistEntitiesAsync(customers, addresses, products, orders, userAccounts, ct);
 
         _logger.LogInformation("Imported {Customers} customers, {Products} products, {Orders} orders",
             customers.Count, products.Count, orders.Count);
@@ -141,7 +140,7 @@ public sealed class DataImportService
         return records;
     }
 
-    private ImportRecord ParseExcelRow(ExcelWorksheet worksheet, int row)
+    private static ImportRecord ParseExcelRow(ExcelWorksheet worksheet, int row)
     {
         return new ImportRecord
         {
@@ -173,18 +172,20 @@ public sealed class DataImportService
     private (Dictionary<string, Customer> Customers,
              Dictionary<string, Address> Addresses,
              Dictionary<string, Product> Products,
-             List<Order> Orders) TransformRecords(List<ImportRecord> records)
+             List<Order> Orders,
+             Dictionary<string, UserAccount> UserAccounts) TransformRecords(List<ImportRecord> records)
     {
         var customerDict = new Dictionary<string, Customer>();
         var addressDict = new Dictionary<string, Address>();
         var productDict = new Dictionary<string, Product>();
+        var userAccountDict = new Dictionary<string, UserAccount>();
         var orders = new List<Order>();
 
         foreach (var record in records)
         {
             try
             {
-                var customer = GetOrCreateCustomer(record, customerDict);
+                var (customer, userAccount) = GetOrCreateCustomerWithAccount(record, customerDict, userAccountDict);
                 var shippingAddress = GetOrCreateAddress(record, customer, AddressType.Shipping, addressDict);
                 var billingAddress = GetOrCreateAddress(record, customer, AddressType.Billing, addressDict);
                 var product = GetOrCreateProduct(record, productDict);
@@ -198,29 +199,43 @@ public sealed class DataImportService
             }
         }
 
-        return (customerDict, addressDict, productDict, orders);
+        return (customerDict, addressDict, productDict, orders, userAccountDict);
     }
 
-    private Customer GetOrCreateCustomer(ImportRecord record, Dictionary<string, Customer> customerDict)
+    private static (Customer, UserAccount) GetOrCreateCustomerWithAccount(
+        ImportRecord record,
+        Dictionary<string, Customer> customerDict,
+        Dictionary<string, UserAccount> userAccountDict)
     {
         var email = Email.Create(record.Email);
 
-        if (customerDict.TryGetValue(email.Value, out var existingCustomer))
-            return existingCustomer;
+        if (customerDict.TryGetValue(email.Value, out var existingCustomer) &&
+            userAccountDict.TryGetValue(email.Value, out var existingAccount))
+        {
+            return (existingCustomer, existingAccount);
+        }
 
         var customer = new Customer(
             CustomerId.New(),
             record.FirstName,
             record.LastName,
-            email,
             Phone.Create(record.Phone ?? DEFAULT_PHONE)
         );
 
+        var userAccount = new UserAccount(
+            UserAccountId.New(),
+            email,
+            UserRole.User,
+            customer.Id
+        );
+
         customerDict[email.Value] = customer;
-        return customer;
+        userAccountDict[email.Value] = userAccount;
+
+        return (customer, userAccount);
     }
 
-    private Address GetOrCreateAddress(
+    private static Address GetOrCreateAddress(
         ImportRecord record,
         Customer customer,
         AddressType type,
@@ -248,7 +263,7 @@ public sealed class DataImportService
         return address;
     }
 
-    private Product GetOrCreateProduct(ImportRecord record, Dictionary<string, Product> productDict)
+    private static Product GetOrCreateProduct(ImportRecord record, Dictionary<string, Product> productDict)
     {
         var sku = Sku.Generate(record.ItemName, record.ManufacturedFrom ?? UNKNOWN_ORIGIN);
         var key = sku.Value;
@@ -269,7 +284,7 @@ public sealed class DataImportService
         return product;
     }
 
-    private Order CreateOrder(
+    private static Order CreateOrder(
         ImportRecord record,
         Customer customer,
         Address shippingAddress,
@@ -287,6 +302,7 @@ public sealed class DataImportService
             shippingAddress.Id,
             billingAddress.Id,
             ParseDate(record.PurchaseDate),
+            record.Card,
             ParseDate(record.EstimatedDelivery)
         );
 
@@ -307,9 +323,11 @@ public sealed class DataImportService
         Dictionary<string, Address> addresses,
         Dictionary<string, Product> products,
         List<Order> orders,
+        Dictionary<string, UserAccount> userAccounts,
         CancellationToken ct)
     {
         await _context.Customers.AddRangeAsync(customers.Values, ct);
+        await _context.UserAccounts.AddRangeAsync(userAccounts.Values, ct);
         await _context.Addresses.AddRangeAsync(addresses.Values, ct);
         await _context.Products.AddRangeAsync(products.Values, ct);
         await _context.Orders.AddRangeAsync(orders, ct);
