@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using EShop.Domain.Auth;
 using EShop.Domain.Customers;
+using EShop.Domain.Addresses;
 using EShop.Domain.Orders;
 using EShop.Domain.Products;
 using EShop.Infrastructure.Persistence;
