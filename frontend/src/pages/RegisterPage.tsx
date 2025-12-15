@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
+import { countryByCode } from "../lib/countries";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -16,10 +17,10 @@ export const RegisterPage = () => {
     phone: "",
     shippingAddress: "",
     shippingCity: "",
-    shippingCountry: "",
+    shippingCountryCode: "",
     billingAddress: "",
     billingCity: "",
-    billingCountry: "",
+    billingCountryCode: "",
   });
   const [sameAsShipping, setSameAsShipping] = useState(true);
   const [error, setError] = useState("");
@@ -32,7 +33,9 @@ export const RegisterPage = () => {
     }
   }, [prefilledEmail]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -46,16 +49,22 @@ export const RegisterPage = () => {
 
     try {
       const registrationData = {
-        ...formData,
-        billingAddress: sameAsShipping
+        Email: formData.email,
+        FirstName: formData.firstName,
+        LastName: formData.lastName,
+        Phone: formData.phone,
+        ShippingAddress: formData.shippingAddress,
+        ShippingCity: formData.shippingCity,
+        ShippingCountryCode: formData.shippingCountryCode,
+        BillingAddress: sameAsShipping
           ? formData.shippingAddress
           : formData.billingAddress,
-        billingCity: sameAsShipping
+        BillingCity: sameAsShipping
           ? formData.shippingCity
           : formData.billingCity,
-        billingCountry: sameAsShipping
-          ? formData.shippingCountry
-          : formData.billingCountry,
+        BillingCountryCode: sameAsShipping
+          ? formData.shippingCountryCode
+          : formData.billingCountryCode,
       };
 
       await apiClient.post("/auth/register", registrationData);
@@ -183,14 +192,20 @@ export const RegisterPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Country *
                   </label>
-                  <input
-                    type="text"
-                    name="shippingCountry"
-                    value={formData.shippingCountry}
+                  <select
+                    name="shippingCountryCode"
+                    value={formData.shippingCountryCode}
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  >
+                    <option value="">Select a country</option>
+                    {Object.entries(countryByCode).map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -244,14 +259,20 @@ export const RegisterPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Country *
                     </label>
-                    <input
-                      type="text"
-                      name="billingCountry"
-                      value={formData.billingCountry}
+                    <select
+                      name="billingCountryCode"
+                      value={formData.billingCountryCode}
                       onChange={handleChange}
                       required={!sameAsShipping}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                    >
+                      <option value="">Select a country</option>
+                      {Object.entries(countryByCode).map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
