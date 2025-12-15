@@ -1,0 +1,55 @@
+@api = http://localhost:5000/api/v1
+
+### login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### refresh token
+POST {{api}}/auth/refresh
+
+### logout
+POST {{api}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### search products
+GET {{api}}/products?search=laptop&page=1&pageSize=25
+
+### get product by id
+GET {{api}}/products/{{productId}}
+
+### checkout order
+POST {{api}}/orders
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 1
+    }
+  ],
+  "shippingAddressId": "{{addressId}}",
+  "billingAddressId": "{{addressId}}",
+  "shippingCountry": "US"
+}
+
+### get my orders
+GET {{api}}/orders/mine
+Authorization: Bearer {{accessToken}}
+
+### get customer profile
+GET {{api}}/customers/me
+Authorization: Bearer {{accessToken}}
+
+### admin: get incomplete orders
+GET {{api}}/admin/orders
+Authorization: Bearer {{accessToken}}
+
+### admin: complete order
+POST {{api}}/admin/orders/{{orderId}}/complete
+Authorization: Bearer {{accessToken}}
